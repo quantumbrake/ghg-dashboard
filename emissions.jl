@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.12.16
+# v0.12.17
 
 using Markdown
 using InteractiveUtils
@@ -112,7 +112,7 @@ end
 	group=:country,
 	title="Wordlwide CO₂ emissions",
 	w=3,
-	legend=:topright,
+	legend=:topleft,
 	xlabel="Years",
 	ylabel="CO₂ emissions",
 )
@@ -136,6 +136,9 @@ begin
 	sum_components = map(x -> Symbol(join([string(x), "sum"], "_")), components)
 	CO₂_data_plot_elem = get_yearly_breakdown(CO₂_data_plot, components)
 end
+
+# ╔═╡ 7d098220-3cc8-11eb-15e6-17fb1cdcda65
+filter([:cement_co2, :coal_co2, :flaring_co2, :gas_co2, :oil_co2, :year] => (x1, x2, x3, x4, x5, y) -> length(collect(skipmissing([x1, x2, x3, x4, x5]))) < 5 && (y ∈ range(2010, step=1, stop=2018)), CO₂_data_plot)[!, [:cement_co2, :coal_co2, :flaring_co2, :gas_co2, :oil_co2, :year, :country]]
 
 # ╔═╡ 76cd7458-37d9-11eb-3c2e-a1eafddc3b0f
 groupedbar(
@@ -176,6 +179,9 @@ pie(
 	convert(Array, CO₂_data_plot_elem_year_frac[1, :]),
 )
 
+# ╔═╡ c672e488-3807-11eb-0bcc-7d2b8b71b238
+
+
 # ╔═╡ Cell order:
 # ╟─f67f3c42-373c-11eb-37ba-119e403e6e4b
 # ╠═d516ddd2-373a-11eb-2e23-cfa3567381c8
@@ -194,12 +200,14 @@ pie(
 # ╟─67bc0948-37cf-11eb-078d-45a5c22f5cb1
 # ╟─a0d000b0-375a-11eb-15cf-eb2bab323520
 # ╟─569d1190-375a-11eb-3a84-211e63e24ecf
-# ╟─9d18e522-373c-11eb-2556-e9b2dcc51fe8
+# ╠═9d18e522-373c-11eb-2556-e9b2dcc51fe8
 # ╟─5ce275fe-37e6-11eb-0e9f-87ae89d8f47e
 # ╠═2028a704-37e7-11eb-2551-6d344c9c4058
+# ╠═7d098220-3cc8-11eb-15e6-17fb1cdcda65
 # ╠═76cd7458-37d9-11eb-3c2e-a1eafddc3b0f
-# ╟─823b1bf6-37ed-11eb-1afc-e1ebd30026aa
+# ╠═823b1bf6-37ed-11eb-1afc-e1ebd30026aa
 # ╟─7f2d987c-37e4-11eb-1001-c5e2585b915d
 # ╟─6ca43120-37e4-11eb-1e3a-61cbdf7734aa
 # ╠═f221acdc-37ed-11eb-3d9c-3373ff76bad3
 # ╠═cb13cdc8-37e3-11eb-1a35-3bddfae314df
+# ╠═c672e488-3807-11eb-0bcc-7d2b8b71b238
