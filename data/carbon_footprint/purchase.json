@@ -1,0 +1,17 @@
+{
+    "shirt": 12.5,
+    "tshirt": 7.67,
+    "jeans": 25,
+    "sweater": 30.6,
+    "coat": 51,
+    "dress": 54.33,
+    "shoes": 18,
+    "smartphone": 80,
+    "tablet": 87,
+    "computer": 588,
+    "laptop": 210,
+    "tv": 500,
+    "fossilFuelCar": 5600,
+    "hybridCar": 6500,
+    "eletricCar": 8800
+}

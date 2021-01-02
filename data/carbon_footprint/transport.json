@@ -1,0 +1,17 @@
+{
+    "bus": 0.000103,
+    "fossilFueledCar": 0.000257,
+    "electricVehicle": 0.000081,
+    "car": 0.000257,
+    "hybridCar": 0.00018,
+    "carSharing": 0.000147,
+    "motorbike": 0.000108,
+    "shortDistanceBus": 0.000103,
+    "longDistanceBus": 0.000052,
+    "train": 0.000042,
+    "boat": 0.000803,
+    "shortHaulFlight": 0.00034,
+    "mediumHaulFlight": 0.000286,
+    "longHaulFlight": 0.000239,
+    "plane": 0.000283
+}
