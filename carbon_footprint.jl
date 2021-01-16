@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.12.17
+# v0.12.18
 
 using Markdown
 using InteractiveUtils
@@ -217,19 +217,67 @@ $(@bind electricity_select Select([k => k for (k, v) in electricity_data]))
 
 Electricity amount in kWh
 $(@bind electricity_amount Slider(1:1000, default=10, show_value=true))
+
+Recent purchases
+$(@bind purchase_select MultiSelect([k => k for (k, v) in purchase_data]))
 """
 
-# ╔═╡ 14743ea4-52c1-11eb-0cb4-8d3523a8f5ef
-md"""---"""
+# ╔═╡ f5225d7a-5846-11eb-1497-c5d439899e6b
+begin
+	function emission_calculator(
+			transport_select::String,
+			transport_distance::Integer,
+			food_select::String,
+			food_amount::Integer,
+			streaming_select::String,
+			streaming_amount::Integer,
+			electricity_select::String,
+			electricity_amount::Integer,
+			purchase_select::Array,
+	)::Dict
+		transport_emissions = transport_data[transport_select] * transport_distance * 1000
+		food_emissions = food_data[food_select] * food_amount
+		streaming_emissions = streaming_carbonimpact(streaming_select,streaming_amount * 60.0,electricity_data["world"])
+		electricity_emissions = electricity_data_pw[electricity_select] * electricity_amount
+		if isempty(purchase_select)
+			purchase_emissions = 0.0
+		else
+			purchase_emissions = sum([purchase_data[purchase] for purchase in purchase_select])
+		end
+		total_emissions = (transport_emissions + food_emissions + streaming_emissions + electricity_emissions + purchase_emissions)
+		data = Dict(
+			"transport" => transport_emissions,
+			"food" => food_emissions,
+			"streaming" => streaming_emissions,
+			"electricity" => electricity_emissions,
+			"purchase" => purchase_emissions,
+			"total" => total_emissions,
+			)
+		return data
+	end
+end
 
 # ╔═╡ 9388aa8a-52c9-11eb-0dd8-3184bcfb93b2
 begin
-	transport_emissions = transport_data[transport_select] * transport_distance * 1000
-	food_emissions = food_data[food_select] * food_amount;
-	streaming_emissions = streaming_carbonimpact(streaming_select,streaming_amount * 60.0,electricity_data["world"]);
-	electricity_emissions = electricity_data_pw[electricity_select] * electricity_amount;
-	total_emissions = (transport_emissions + food_emissions + streaming_emissions + electricity_emissions);
-end;
+	emissions_data = emission_calculator(
+			transport_select,
+			transport_distance,
+			food_select,
+			food_amount,
+			streaming_select,
+			streaming_amount,
+			electricity_select,
+			electricity_amount,
+			purchase_select,
+	)
+	transport_emissions = emissions_data["transport"]
+	food_emissions =  emissions_data["food"]
+	streaming_emissions =  emissions_data["streaming"]
+	electricity_emissions =  emissions_data["electricity"]
+	purchase_emissions = emissions_data["purchase"]
+	total_emissions = emissions_data["total"]
+	"Emissions calculation code"
+end
 
 # ╔═╡ 0a38c120-52c6-11eb-2ec5-e7780b3e11ec
 md"""
@@ -243,14 +291,21 @@ md"""
 
 4. Electricity emissions = $(@sprintf("%.3f", electricity_emissions)) kgCO2eq
 
+5. Purchase emissions = $(@sprintf("%.3f", purchase_emissions)) kgCO2eq
+
 **Total emissions** = $(@sprintf("%.3f", total_emissions)) kgCO2eq
 
 """
+
+# ╔═╡ 14743ea4-52c1-11eb-0cb4-8d3523a8f5ef
+md"""---"""
 
 # ╔═╡ Cell order:
 # ╟─0442fbb8-52c0-11eb-06ea-01e68e330d5d
 # ╟─5fbcb6e6-52ca-11eb-3e8c-1bb7495dc15d
 # ╟─1b612ec2-52c1-11eb-22aa-3b406bd64623
+# ╟─f5225d7a-5846-11eb-1497-c5d439899e6b
+# ╟─9388aa8a-52c9-11eb-0dd8-3184bcfb93b2
 # ╟─0a38c120-52c6-11eb-2ec5-e7780b3e11ec
 # ╟─ec388b4a-52ca-11eb-097d-6760de18dd0e
 # ╟─054ae36c-52cb-11eb-25aa-31355bbed6de
@@ -271,4 +326,3 @@ md"""
 # ╟─cd98af32-4d4b-11eb-2ffb-edbe9a3c069b
 # ╟─04b51758-52b7-11eb-10f9-f5be66cf0dec
 # ╟─14743ea4-52c1-11eb-0cb4-8d3523a8f5ef
-# ╟─9388aa8a-52c9-11eb-0dd8-3184bcfb93b2
