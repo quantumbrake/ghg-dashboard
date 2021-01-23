@@ -13,6 +13,9 @@ macro bind(def, element)
     end
 end
 
+# ╔═╡ 49f027da-5dce-11eb-3fff-0fd590112019
+using Distributions, Random
+
 # ╔═╡ 3b2050da-52c1-11eb-3b89-1d5b6eb2cf40
 using PlutoUI, Printf
 
@@ -26,6 +29,22 @@ md"""## Add emission """
 
 # ╔═╡ ec388b4a-52ca-11eb-097d-6760de18dd0e
 md"""---"""
+
+# ╔═╡ 5552f080-5dce-11eb-013e-6f856304cdcf
+# Source: https://ars.els-cdn.com/content/image/1-s2.0-S0959378020307883-mmc1.pdf
+# Electricity -
+# Food - Grain, vegetable, fruit, dairy, beef, pork, poultry, other meat, fish, alcohol, other beverage, confectionery, restaurant, other food
+# Income: bottom, low, middle, high, top
+
+# ╔═╡ c065c808-5dd2-11eb-10d6-576b82dc5ce0
+# Source: http://css.umich.edu/factsheets/carbon-footprint-factsheet
+# US
+# Different food distribution
+# Electricity
+
+# ╔═╡ 78d20618-5dd3-11eb-03f4-b9a0e5f50e9a
+# Source: https://www.pnas.org/content/117/32/19122
+# Has energy use data
 
 # ╔═╡ 054ae36c-52cb-11eb-25aa-31355bbed6de
 md"""# Sources """
@@ -308,6 +327,10 @@ md"""---"""
 # ╟─9388aa8a-52c9-11eb-0dd8-3184bcfb93b2
 # ╟─0a38c120-52c6-11eb-2ec5-e7780b3e11ec
 # ╟─ec388b4a-52ca-11eb-097d-6760de18dd0e
+# ╠═49f027da-5dce-11eb-3fff-0fd590112019
+# ╠═5552f080-5dce-11eb-013e-6f856304cdcf
+# ╠═c065c808-5dd2-11eb-10d6-576b82dc5ce0
+# ╠═78d20618-5dd3-11eb-03f4-b9a0e5f50e9a
 # ╟─054ae36c-52cb-11eb-25aa-31355bbed6de
 # ╠═3b2050da-52c1-11eb-3b89-1d5b6eb2cf40
 # ╠═b4a152f0-4d4f-11eb-106b-b58e9f1495a9
