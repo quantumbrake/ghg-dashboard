@@ -23,6 +23,8 @@ begin
 	n2o_std = 0.04;
 	ch4_co2_eq_lower = 25; ch4_co2_eq_upper = 28;
 	n2o_co2_eq_lower = 265; n2o_co2_eq_upper = 298;
+	rcr_lower = 1.4; rcr_upper = 1.8; # kg residue / kg rice
+	india_annual_emission = 2.46 * 10^9 * 10^3 / 10^9; # billion tonnes -> Gg conversion
 	
 	Random.seed!(123)
 	n_samples = 100;
@@ -37,7 +39,10 @@ begin
 	n2o_co2eq_factor = rand(Uniform(n2o_co2_eq_lower, n2o_co2_eq_upper), n_samples);
 	n2o_co2eq = n2o_amt .* n2o_co2eq_factor;
 	
-	co2eq = co2_amt + ch4_co2eq + n2o_co2eq
+	residue_per_kg_rice = rand(Uniform(rcr_lower, rcr_upper), n_samples);
+	
+	co2eq = co2_amt + ch4_co2eq + n2o_co2eq # co2eq / kg residue
+	co2eq_per_kg_rice = co2eq .* residue_per_kg_rice # co2eq / kg rice
 	
 	residue_amt = 14; # units of million tonnes
 	residue_amt_3_lower = 15; residue_amt_3_upper = 22.5;
@@ -53,11 +58,11 @@ begin
 end;
 
 # ╔═╡ e986fbd0-4d42-11eb-3342-ff3bb8eff1ad
-md"# What is the global warming impact of crop burning?
+md"# What is the global warming impact of burning crop residue in Northern India?
 
-To clear the fields of the residue from the previous rice crop and make way for the subsequent wheat crop, farmers in north India resort to burning what's left in the field. Called crop-burning, this happens in the months of October and November [1]. Manually clearing the residue, or using machines built for the purpose, may cost more. The machine and its associated manpower being available appear to be other reasons why they may not be adopted **cite**.
+To clear the fields of the residue from the previous rice crop and make way for the subsequent wheat crop, farmers in Northern India resort to burning what's left in the field. Called crop residue burning, this happens in the months of October and November [1]. Manually clearing the residue, or using machines built for the purpose, may cost more. The machine and its associated manpower being available appear to be other reasons why they may not be adopted **cite**.
 
-I was interested in understanding what the global warming impact of crop burning is. Burning crop contributes to global warming in at least two ways - through the release of greenhouse gases (GHGs) and the obvious one - the heat from the burning the crops themselves. I was interested in the former.
+I was interested in understanding what the global warming impact of burning crop residue is. It contributes to global warming in at least two ways - through the release of greenhouse gases (GHGs) and the obvious one - the heat from the burning the crops themselves. I was interested in the former.
 
 ## How are greenhouse gas global warming potential measured?
 
@@ -118,6 +123,16 @@ md"
 
 So it does appear that the impact of methane and nitrous oxide is higher than surmised purely based on their amounts. However it is only a fraction of the impact of $CO_2$ alone, based on the chosen data.
 
+### Putting these numbers in perspective
+
+To put these numbers in perspective, I looked at the $CO_2$ output of growing rice. 
+
+- According to a publication [7] and the subsequent analysis by Our World in Data [8], growing one kg of *rice* creates approximately 4kg $CO_2$.
+- In comparison, CO2 from burning residue is : $(round(mean(co2eq) / 1000, digits=2)) $$\pm$$ $(round(std(co2eq) / 1000, digits=2)) (mean $$\pm$$ SD) kg CO2eq for one kg of *residue* (from the plot above). 
+- Using a conversion factor of $(rcr_lower) - $(rcr_upper) kg residue per kg rice crop [1], we have to $(round(mean(co2eq_per_kg_rice) / 1000, digits=2)) $$\pm$$ $(round(std(co2eq_per_kg_rice) / 1000, digits=2)) kg CO2eq per kg of rice grown, from crop burning.
+
+It appears that growing rice with crop burning creates 50% more CO2, approximately, than growing rice without crop burning! Well, that's something.
+
 ## Overall impact on global warming
 
 To understand the overall impact of crop burning on global warming, I found estimates for the amount of agricultural residue that was burned in 2016.
@@ -142,13 +157,18 @@ begin
 end
 
 # ╔═╡ 7f753680-5878-11eb-3c3c-d772aa51e7e7
-md"I trust the estimate of of case number 1 most, since the authors of that publication follow a first principled approach to estimate the amount of residue, and use many data sources to avoid underestimations. For example, they fill in the gaps from satellite data with surveys."
+md"I trust the estimate of of case number 1 most, since the authors of that publication follow a first principled approach to estimate the amount of residue, and use many data sources to avoid underestimations. For example, they fill in the gaps from satellite data with surveys.
 
-# ╔═╡ daa76dd2-52eb-11eb-2492-b596bf1b7de3
+### Putting these numbers in perspective
 
+According to Our World in Data [9], the total CO2 emission of India is 2.46 billion tonnes in 2017. The CO2eq from case number 1 as a fraction of this quantity evaluates to $(round(mean(total_co2eq) / (india_annual_emission) * 100, digits=2)) % or almost 1%!
 
-# ╔═╡ f06dec20-52eb-11eb-18c9-71d5cfb5b910
+## Summary of findings
 
+1. Compared to growing rice without burning of crop residue, growing rice with burning of crop residue releases 50% more CO2eq of GHG.
+1. Accounting for how much rice is grown with crop residue burning, the GHG contribution is around 1% of the total GHG emissions of India in one year.
+
+"
 
 # ╔═╡ 701820f0-52e5-11eb-1cff-195defc1e22a
 md"
@@ -165,7 +185,13 @@ md"
 
 [5]: <https://climatechangeconnection.org/emissions/co2-equivalents/>
 
-[6]: <https://doi.org/10.1038/s41598-019-52799-x>"
+[6]: <https://doi.org/10.1038/s41598-019-52799-x>
+
+[7]: <https://doi.org/10.1126/science.aaq0216>
+
+[8]: <https://ourworldindata.org/environmental-impacts-of-food>
+
+[9]: <https://ourworldindata.org/co2/country/india?country=~IND>"
 
 # ╔═╡ 8685b4b0-52e5-11eb-1414-bfb2439d473c
 
@@ -174,19 +200,17 @@ md"
 
 
 # ╔═╡ Cell order:
-# ╠═81888440-4d42-11eb-1bf5-0f0108717ed6
-# ╠═ee1dacd0-52e6-11eb-3486-0bb6ee49c951
-# ╠═e4abc46e-52e6-11eb-19e0-19a94e1257c6
+# ╟─81888440-4d42-11eb-1bf5-0f0108717ed6
+# ╟─ee1dacd0-52e6-11eb-3486-0bb6ee49c951
+# ╟─e4abc46e-52e6-11eb-19e0-19a94e1257c6
 # ╟─e986fbd0-4d42-11eb-3342-ff3bb8eff1ad
-# ╠═8aa500ee-52e5-11eb-034e-15d346c9433e
+# ╟─8aa500ee-52e5-11eb-034e-15d346c9433e
 # ╟─0ebca100-52ea-11eb-0575-35a5a3185264
 # ╟─f4406d20-586b-11eb-0d35-51da6f73592e
-# ╠═84569b40-586d-11eb-2e39-8bda6366221b
+# ╟─84569b40-586d-11eb-2e39-8bda6366221b
 # ╟─925ff0a0-586e-11eb-24c5-3be428cb076f
 # ╟─82c338c0-5867-11eb-02f4-4d0f92a4081d
 # ╟─7f753680-5878-11eb-3c3c-d772aa51e7e7
-# ╟─daa76dd2-52eb-11eb-2492-b596bf1b7de3
-# ╟─f06dec20-52eb-11eb-18c9-71d5cfb5b910
-# ╠═701820f0-52e5-11eb-1cff-195defc1e22a
+# ╟─701820f0-52e5-11eb-1cff-195defc1e22a
 # ╟─8685b4b0-52e5-11eb-1414-bfb2439d473c
 # ╟─77ed9760-52e5-11eb-3534-d512d858bd9d
