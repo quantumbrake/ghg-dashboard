@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.12.18
+# v0.12.20
 
 using Markdown
 using InteractiveUtils
@@ -25,10 +25,54 @@ md"""
 """
 
 # ╔═╡ 5fbcb6e6-52ca-11eb-3e8c-1bb7495dc15d
-md"""## Add emission """
+md"""## Add emissions """
 
 # ╔═╡ ec388b4a-52ca-11eb-097d-6760de18dd0e
 md"""---"""
+
+# ╔═╡ 672fef94-6351-11eb-0af1-652d5992e129
+Random.seed!(1234);
+
+# ╔═╡ 293e77fc-6347-11eb-3baa-35a2a2ea2059
+md"""
+Factors to model
+
+1. Transport - vehicle and distance
+2. Food - type and amount
+3. Streaming - type and duration
+4. Electricity - location and amount
+5. Purchases - type and amount
+"""
+
+# ╔═╡ 16fb0470-6351-11eb-104f-9de78182499d
+md"""
+Random transport
+"""
+
+# ╔═╡ eeee2d84-6352-11eb-3b69-0b3a53840e97
+md"""
+Random food
+"""
+
+# ╔═╡ 2b33df02-6353-11eb-07bf-c5a64c6c68d9
+md"""
+Random Streaming
+"""
+
+# ╔═╡ c4403112-6353-11eb-09ff-5b78fe6d4581
+md"""
+Random Electricity
+"""
+
+# ╔═╡ f106a442-6353-11eb-26fb-2fdc38c0bf80
+md"""
+Random Purchases
+"""
+
+# ╔═╡ bcb6b95e-6356-11eb-1662-397a7be9c496
+md"""
+Random result
+"""
 
 # ╔═╡ 5552f080-5dce-11eb-013e-6f856304cdcf
 # Source: https://ars.els-cdn.com/content/image/1-s2.0-S0959378020307883-mmc1.pdf
@@ -90,6 +134,12 @@ begin
 	electricity_data = Dict(zip(keys(electricity_data_pw), values_pj))
 end
 
+# ╔═╡ d150a918-6353-11eb-305b-2f50dadaeaed
+begin
+	electricity_place = rand(keys(electricity_data))
+	electricity_amounts = floor.(Int, rand(Uniform(1, 1000)))
+end
+
 # ╔═╡ 1fc15990-4d41-11eb-0f5f-c309cf01fdfa
 md"""
 ## Food
@@ -104,6 +154,13 @@ Unit: $kgCO_2eq$
 # ╔═╡ 329e738a-52ba-11eb-22dd-fbfe2de89bb1
 food_data = read_json("data/carbon_footprint/food.json")
 
+# ╔═╡ f40c4d82-6352-11eb-3954-3dd3fcc0d776
+begin
+	n_food_types = rand((1, 2, 3, 4, 5))
+	food_types = rand(keys(food_data), n_food_types)
+	food_amounts = floor.(Int, rand(Uniform(20, 500), n_food_types))
+end
+
 # ╔═╡ fb596dc6-4d41-11eb-1dbd-6707e4fa7778
 md"""
 ## Internet
@@ -115,6 +172,19 @@ Unit: $kgCO_2eq$
 - https://github.com/carbonalyser/
 - https://www.carbonbrief.org/factcheck-what-is-the-carbon-footprint-of-streaming-video-on-netflix
 """
+
+# ╔═╡ 83af9228-6353-11eb-0e5b-4550ac55ca4f
+streaming_data = Dict(["HDVideo" => "Video HD",
+			"fullHDVideo" => "Video - FullHD/1080p",
+			"ultraHDVideo" => "Video - UltraHD/4K",
+			"audioMP3" => "Audio - MP3"])
+
+# ╔═╡ 545a4586-6353-11eb-20f8-b5de7cf57054
+begin
+	n_stream_types = rand((1, 2, 3, 4))
+	stream_types = rand(keys(streaming_data), n_stream_types)
+	stream_amounts = floor.(Int, rand(Uniform(15, 600), n_stream_types))
+end
 
 # ╔═╡ cfd60bf8-4d43-11eb-00b7-bd162061b954
 begin
@@ -158,6 +228,13 @@ Unit: $kgCO_2eq$ per product
 
 # ╔═╡ 42eb4b3e-52ba-11eb-2178-11e1d2a887af
 purchase_data = read_json("data/carbon_footprint/purchase.json")
+
+# ╔═╡ f7a05460-6353-11eb-3b57-1de112c66e4a
+begin
+	n_purchase_types = rand((1, 2, 3, 4, 5))
+	purchase_types = rand(keys(purchase_data), n_purchase_types)
+	purchase_amounts = floor.(Int, rand(Uniform(1, 5), n_purchase_types))
+end
 
 # ╔═╡ e8574808-4d49-11eb-3515-2d66aadee9f2
 md"""
@@ -276,6 +353,50 @@ begin
 	end
 end
 
+# ╔═╡ 8aa42c6e-6354-11eb-3c43-cb16327595c2
+begin
+	function emission_calculator(
+			transport_select::Array{String,1},
+			transport_distance::Array{Int64,1},
+			food_select::Array{String,1},
+			food_amount::Array{Int64,1},
+			streaming_select::Array{String,1},
+			streaming_amount::Array{Int64,1},
+			electricity_select::String,
+			electricity_amount::Int64,
+			purchase_select::Array{String, 1},
+			purchase_amount::Array{Int64, 1},
+	)::Dict
+		transport_emissions = 0
+		for (i, j) in zip(transport_select, transport_distance)
+			transport_emissions += transport_data[i] * j * 1000
+		end
+		food_emissions = 0
+		for (i, j) in zip(food_select, food_amount)
+			food_emissions += food_data[i] * j
+		end
+		streaming_emissions = 0
+		for (i, j) in zip(streaming_select, streaming_amount)
+			streaming_emissions += streaming_carbonimpact(i, j * 60.0,electricity_data["world"])
+		end
+		electricity_emissions = electricity_data_pw[electricity_select] * electricity_amount
+		purchase_emissions = 0.0
+		for (i, j) in zip(purchase_select, purchase_amount)
+			purchase_emissions += purchase_data[i] * j
+		end
+		total_emissions = (transport_emissions + food_emissions + streaming_emissions + electricity_emissions + purchase_emissions)
+		data = Dict(
+			"transport" => transport_emissions,
+			"food" => food_emissions,
+			"streaming" => streaming_emissions,
+			"electricity" => electricity_emissions,
+			"purchase" => purchase_emissions,
+			"total" => total_emissions,
+			)
+		return data
+	end
+end
+
 # ╔═╡ 9388aa8a-52c9-11eb-0dd8-3184bcfb93b2
 begin
 	emissions_data = emission_calculator(
@@ -316,18 +437,54 @@ md"""
 
 """
 
+# ╔═╡ 594ab8f4-6347-11eb-3eb9-eb1cced757d4
+begin
+	n_transport_vehicles = rand((1, 2, 3))
+	transport_vehicles = rand(keys(transport_data), n_transport_vehicles)
+	transport_distances = floor.(Int, rand(Uniform(2, 1000), n_transport_vehicles))
+end
+
+# ╔═╡ 3ce4671c-6356-11eb-14bd-ddf8e43bc8de
+result = emission_calculator(
+		transport_vehicles,
+		transport_distances,
+		food_types,
+		food_amounts,
+		stream_types,
+		stream_amounts,
+		electricity_place,
+		electricity_amounts,
+		purchase_types,
+		purchase_amounts,
+)
+
 # ╔═╡ 14743ea4-52c1-11eb-0cb4-8d3523a8f5ef
 md"""---"""
 
 # ╔═╡ Cell order:
 # ╟─0442fbb8-52c0-11eb-06ea-01e68e330d5d
 # ╟─5fbcb6e6-52ca-11eb-3e8c-1bb7495dc15d
-# ╟─1b612ec2-52c1-11eb-22aa-3b406bd64623
+# ╠═1b612ec2-52c1-11eb-22aa-3b406bd64623
 # ╟─f5225d7a-5846-11eb-1497-c5d439899e6b
+# ╠═8aa42c6e-6354-11eb-3c43-cb16327595c2
 # ╟─9388aa8a-52c9-11eb-0dd8-3184bcfb93b2
 # ╟─0a38c120-52c6-11eb-2ec5-e7780b3e11ec
 # ╟─ec388b4a-52ca-11eb-097d-6760de18dd0e
 # ╠═49f027da-5dce-11eb-3fff-0fd590112019
+# ╠═672fef94-6351-11eb-0af1-652d5992e129
+# ╟─293e77fc-6347-11eb-3baa-35a2a2ea2059
+# ╟─16fb0470-6351-11eb-104f-9de78182499d
+# ╠═594ab8f4-6347-11eb-3eb9-eb1cced757d4
+# ╟─eeee2d84-6352-11eb-3b69-0b3a53840e97
+# ╠═f40c4d82-6352-11eb-3954-3dd3fcc0d776
+# ╟─2b33df02-6353-11eb-07bf-c5a64c6c68d9
+# ╠═545a4586-6353-11eb-20f8-b5de7cf57054
+# ╟─c4403112-6353-11eb-09ff-5b78fe6d4581
+# ╠═d150a918-6353-11eb-305b-2f50dadaeaed
+# ╟─f106a442-6353-11eb-26fb-2fdc38c0bf80
+# ╠═f7a05460-6353-11eb-3b57-1de112c66e4a
+# ╟─bcb6b95e-6356-11eb-1662-397a7be9c496
+# ╠═3ce4671c-6356-11eb-14bd-ddf8e43bc8de
 # ╠═5552f080-5dce-11eb-013e-6f856304cdcf
 # ╠═c065c808-5dd2-11eb-10d6-576b82dc5ce0
 # ╠═78d20618-5dd3-11eb-03f4-b9a0e5f50e9a
@@ -341,6 +498,7 @@ md"""---"""
 # ╟─1fc15990-4d41-11eb-0f5f-c309cf01fdfa
 # ╟─329e738a-52ba-11eb-22dd-fbfe2de89bb1
 # ╟─fb596dc6-4d41-11eb-1dbd-6707e4fa7778
+# ╟─83af9228-6353-11eb-0e5b-4550ac55ca4f
 # ╟─cfd60bf8-4d43-11eb-00b7-bd162061b954
 # ╟─cccb00f0-4d46-11eb-027b-ab6e07ce3ce5
 # ╟─42eb4b3e-52ba-11eb-2178-11e1d2a887af
