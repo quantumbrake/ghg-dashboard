@@ -60,9 +60,11 @@ end;
 # ╔═╡ e986fbd0-4d42-11eb-3342-ff3bb8eff1ad
 md"# What is the global warming impact of burning crop residue in Northern India?
 
-To clear the fields of the residue from the previous rice crop and make way for the subsequent wheat crop, farmers in Northern India resort to burning what's left in the field. Called crop residue burning, this happens in the months of October and November [1]. Manually clearing the residue, or using machines built for the purpose, may cost more. The machine and its associated manpower being available appear to be other reasons why they may not be adopted **cite**.
+> Note, I am not an expert in this field. So results to be interpreted with caution.
 
-I was interested in understanding what the global warming impact of burning crop residue is. It contributes to global warming in at least two ways - through the release of greenhouse gases (GHGs) and the obvious one - the heat from the burning the crops themselves. I was interested in the former.
+To clear the fields of the residue from the previous rice crop and make way for the subsequent wheat crop, some farmers in Northern India burn what's left in the field. Called crop residue burning or stubble burning, this happens in the months of October and November [1]. Manually clearing the residue, or using machines built for the purpose, may cost more [10].
+
+I was interested in understanding the global warming impact of stubble burning. It contributes to global warming in at least two ways - through the release of greenhouse gases (GHGs) and the obvious one - the heat from the burning the stubble. I was interested in the former.
 
 ## How are greenhouse gas global warming potential measured?
 
@@ -72,7 +74,7 @@ For example, suppose a process releases 10g of $CO_2$ and 2g of $CH_4$. And supp
 
 ## Which GHGs, and how much?
 
-Before understanding the overall global warming effects, its useful to know which GHGs are released when burning crop residue. Here I looked at carbon dioxide, methane and nitrous oxide ($N_2O$). While the latter two are addressed in the analysis by the FAO [3], $CO_2$ was not.
+Before understanding the overall global warming effects, its useful to know which GHGs are released when burning crop stubble. Here I looked at carbon dioxide, methane and nitrous oxide ($N_2O$). While the latter two are addressed in the analysis by the FAO [3], $CO_2$ was not.
 
 To understand how much of each of these gases are produced per kg of crop residue, I looked at the meta analysis by Meinrat Andreae [2] and found the following
 
@@ -93,28 +95,29 @@ $N_2O$ | $(n2o_co2_eq_upper) | \"
 
 ### Global warming impact per kg of residue
 
-The numbers above are sufficient to understand the global warming impact of burning 1kg of crop residue. I assume a normal distribution for the gas amounts (since we have mean and std) and a uniform distribution for the CO2eq factors (since we two values from literature). While these distributions may not stand up to peer review, they are a good first step in my opinion.
+The numbers above are sufficient to understand the global warming impact of burning 1kg of crop residue. I assume a normal distribution for the gas amounts (since we have mean and std) and a uniform distribution for the CO2eq factors (since we two values).
 
 "
 
-# ╔═╡ 0ebca100-52ea-11eb-0575-35a5a3185264
+# ╔═╡ 0e807710-636c-11eb-25aa-470687ff7834
 begin
 	# gr(size=(2500,3000))
-	density([log10.(co2_amt), log10.(ch4_amt), log10.(n2o_amt)], 
+	boxplot([log10.(co2_amt), log10.(ch4_amt), log10.(n2o_amt)], 
 		label=["Carbon Dioxide" "Methane" "Nitrous Oxide"], width=2,
-	xlabel="Log10(Emission) (g/kg residue)", ylabel="Probability density",
-	title="Distribution of GHG emission/kg residue burnt", legend=:topleft)
+	xlabel="Gases", ylabel="Log10(GHG emission) (g/kg residue)",
+	title="Distribution of GHG emission/kg residue burnt", legend=false,
+	xticks=([1 2 3], ["Carbon Dioxide" "Methane" "Nitrous Oxide"]))
 end
 
 # ╔═╡ f4406d20-586b-11eb-0d35-51da6f73592e
-md"Since the X axis is on the log scale, we observe that $CO_2$ emission is $\approx$2 orders of magnitude greater than $CH_4$ emission, which is an order greater than $N_2O$ emission. While these are simply the amounts, the impact on global warming is better reflected by the chart below."
+md"Since the Y axis is on the log scale, we observe that $CO_2$ emission is $\approx$2 orders of magnitude greater than $CH_4$ emission, which is an order greater than $N_2O$ emission. While these are simply the amounts, the impact on global warming is better reflected by the chart below."
 
 # ╔═╡ 84569b40-586d-11eb-2e39-8bda6366221b
 begin
 	# gr(size=(2500,3000))
 	boxplot([log10.(co2_amt), log10.(ch4_co2eq), log10.(n2o_co2eq), log10.(co2eq)], width=2,
 	xlabel="Gases", ylabel="Log10(CO2eq) (g/kg residue)",
-	title="Distribution of Emission gCO2eq/kg residue burnt", legend=false,
+	title="Distribution of GHG emission gCO2eq/kg residue burnt", legend=false,
 	xticks=([1 2 3 4], ["Carbon Dioxide" "Methane" "Nitrous Oxide" "Total"]))
 end
 
@@ -127,15 +130,15 @@ So it does appear that the impact of methane and nitrous oxide is higher than su
 
 To put these numbers in perspective, I looked at the $CO_2$ output of growing rice. 
 
-- According to a publication [7] and the subsequent analysis by Our World in Data [8], growing one kg of *rice* creates approximately 4kg $CO_2$.
+- According to a publication [7] and the subsequent analysis by Our World in Data [8], growing one kg of *rice* creates approximately 4kg $CO_2$. Note that this estimate does not talk about the residue.
 - In comparison, CO2 from burning residue is : $(round(mean(co2eq) / 1000, digits=2)) $$\pm$$ $(round(std(co2eq) / 1000, digits=2)) (mean $$\pm$$ SD) kg CO2eq for one kg of *residue* (from the plot above). 
-- Using a conversion factor of $(rcr_lower) - $(rcr_upper) kg residue per kg rice crop [1], we have to $(round(mean(co2eq_per_kg_rice) / 1000, digits=2)) $$\pm$$ $(round(std(co2eq_per_kg_rice) / 1000, digits=2)) kg CO2eq per kg of rice grown, from crop burning.
+- Using a conversion factor of $(rcr_lower) - $(rcr_upper) kg residue per kg rice crop [1], we have to $(round(mean(co2eq_per_kg_rice) / 1000, digits=2)) $$\pm$$ $(round(std(co2eq_per_kg_rice) / 1000, digits=2)) kg CO2eq per kg of rice grown (mean $$\pm$$ SD), from stubble burning.
 
-It appears that growing rice with crop burning creates 50% more CO2, approximately, than growing rice without crop burning! Well, that's something.
+It appears that growing rice with stubble burning creates 50% more CO2, approximately, than growing rice without stubble burning! Well, that's something.
 
 ## Overall impact on global warming
 
-To understand the overall impact of crop burning on global warming, I found estimates for the amount of agricultural residue that was burned in 2016.
+To understand the overall impact of stubble burning on global warming, I found estimates for the amount of agricultural residue that was burned in 2016.
 
 Case | Amount of residue (million tonnes)/ year | Source
 ---|---|---
@@ -161,12 +164,13 @@ md"I trust the estimate of of case number 1 most, since the authors of that publ
 
 ### Putting these numbers in perspective
 
-According to Our World in Data [9], the total CO2 emission of India is 2.46 billion tonnes in 2017. The CO2eq from case number 1 as a fraction of this quantity evaluates to $(round(mean(total_co2eq) / (india_annual_emission) * 100, digits=2)) % or almost 1%!
+According to Our World in Data [9], the total CO2 emission of India is 2.46 billion tonnes in 2017. The CO2eq from case number 1 as a fraction of this quantity evaluates to $(round(mean(total_co2eq) / (india_annual_emission) * 100, digits=2)) $$\pm$$  
+$(round(std(total_co2eq) / (india_annual_emission) * 100, digits=2)) % (mean $$\pm$$ SD) or almost 1%! This is a lower estimate than case 2, where we are looking at $(round(mean(total_co2eq_2) / (india_annual_emission) * 100, digits=2)) % $$\pm$$ $(round(std(total_co2eq_2) / (india_annual_emission) * 100, digits=2)) % (mean $$\pm$$ SD).
 
 ## Summary of findings
 
-1. Compared to growing rice without burning of crop residue, growing rice with burning of crop residue releases 50% more CO2eq of GHG.
-1. Accounting for how much rice is grown with crop residue burning, the GHG contribution is around 1% of the total GHG emissions of India in one year.
+1. Compared to growing rice without stubble burning, growing rice with burning of crop residue releases 50% more CO2eq of GHG.
+1. Accounting for how much rice is grown with stubble burning, the GHG contribution was around 1% of the total GHG emissions of India in 2017.
 
 "
 
@@ -191,7 +195,9 @@ md"
 
 [8]: <https://ourworldindata.org/environmental-impacts-of-food>
 
-[9]: <https://ourworldindata.org/co2/country/india?country=~IND>"
+[9]: <https://ourworldindata.org/co2/country/india?country=~IND>
+
+[10]: <https://indianexpress.com/article/india/stubble-burning-punjab-farmers-amarinder-singh-ngt-air-pollution-4897240/>"
 
 # ╔═╡ 8685b4b0-52e5-11eb-1414-bfb2439d473c
 
@@ -205,7 +211,7 @@ md"
 # ╟─e4abc46e-52e6-11eb-19e0-19a94e1257c6
 # ╟─e986fbd0-4d42-11eb-3342-ff3bb8eff1ad
 # ╟─8aa500ee-52e5-11eb-034e-15d346c9433e
-# ╟─0ebca100-52ea-11eb-0575-35a5a3185264
+# ╟─0e807710-636c-11eb-25aa-470687ff7834
 # ╟─f4406d20-586b-11eb-0d35-51da6f73592e
 # ╟─84569b40-586d-11eb-2e39-8bda6366221b
 # ╟─925ff0a0-586e-11eb-24c5-3be428cb076f
