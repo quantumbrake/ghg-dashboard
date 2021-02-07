@@ -33,16 +33,23 @@ md"""---"""
 # ╔═╡ 672fef94-6351-11eb-0af1-652d5992e129
 Random.seed!(1234);
 
-# ╔═╡ 293e77fc-6347-11eb-3baa-35a2a2ea2059
-md"""
-Factors to model
+# ╔═╡ 49571046-68c2-11eb-071e-2709f8e40e48
+struct Person
+	vehicles::Array{String,1}
+	foods::Array{String,1}
+	streams::Array{String,1}
+	country::String
+	purchases::Array{String,1}
+end
 
-1. Transport - vehicle and distance
-2. Food - type and amount
-3. Streaming - type and duration
-4. Electricity - location and amount
-5. Purchases - type and amount
-"""
+# ╔═╡ 521ebdb6-68c5-11eb-3bb2-8926b33ec780
+person_1 = Person(
+	["car", "motorbike", "bus"],
+	["potatoes", "rice", "milk"],
+	["ultraHDVideo"],
+	"usa",
+	["jeans", "shirt", "shoes"]
+)
 
 # ╔═╡ 16fb0470-6351-11eb-104f-9de78182499d
 md"""
@@ -332,7 +339,7 @@ begin
 			purchase_select::Array,
 	)::Dict
 		transport_emissions = transport_data[transport_select] * transport_distance * 1000
-		food_emissions = food_data[food_select] * food_amount
+		food_emissions = food_data[food_select] * food_amount / 1000
 		streaming_emissions = streaming_carbonimpact(streaming_select,streaming_amount * 60.0,electricity_data["world"])
 		electricity_emissions = electricity_data_pw[electricity_select] * electricity_amount
 		if isempty(purchase_select)
@@ -373,7 +380,7 @@ begin
 		end
 		food_emissions = 0
 		for (i, j) in zip(food_select, food_amount)
-			food_emissions += food_data[i] * j
+			food_emissions += food_data[i] * j / 1000
 		end
 		streaming_emissions = 0
 		for (i, j) in zip(streaming_select, streaming_amount)
@@ -437,6 +444,60 @@ md"""
 
 """
 
+# ╔═╡ 2c63765e-68c3-11eb-317c-d1603846ca9c
+begin
+    function daily_emissions(person::Person)::Dict
+        transport_distances = floor.(
+			Int,
+			rand(
+				truncated(Normal(100, 50), 0, 1000),
+				length(person.vehicles)
+			)
+		)
+        food_amounts = floor.(
+			Int,
+			rand(
+				truncated(Normal(200, 50), 0, 500),
+				length(person.foods)
+			)
+		)
+        stream_amounts = floor.(
+			Int,
+			rand(
+				truncated(Normal(200, 50), 0, 600),
+				length(person.streams)
+			)
+		)
+        electricity_amounts = floor.(
+			Int,
+			rand(truncated(Normal(100, 20), 0, 1000))
+		)
+        purchase_amounts = floor.(
+			Int,
+			rand(
+				Poisson(0.01),
+				length(person.purchases)
+			)
+		)
+		result = emission_calculator(
+		person.vehicles,
+		transport_distances,
+		person.foods,
+		food_amounts,
+		person.streams,
+		stream_amounts,
+		person.country,
+		electricity_amounts,
+		person.purchases,
+		purchase_amounts,
+		)
+		return result
+    end
+end
+
+# ╔═╡ 4a052eb0-68cc-11eb-3cac-b74bcc789672
+daily_emissions(person_1)
+
 # ╔═╡ 594ab8f4-6347-11eb-3eb9-eb1cced757d4
 begin
 	n_transport_vehicles = rand((1, 2, 3))
@@ -466,21 +527,24 @@ md"""---"""
 # ╟─5fbcb6e6-52ca-11eb-3e8c-1bb7495dc15d
 # ╠═1b612ec2-52c1-11eb-22aa-3b406bd64623
 # ╟─f5225d7a-5846-11eb-1497-c5d439899e6b
-# ╠═8aa42c6e-6354-11eb-3c43-cb16327595c2
+# ╟─8aa42c6e-6354-11eb-3c43-cb16327595c2
 # ╟─9388aa8a-52c9-11eb-0dd8-3184bcfb93b2
 # ╟─0a38c120-52c6-11eb-2ec5-e7780b3e11ec
 # ╟─ec388b4a-52ca-11eb-097d-6760de18dd0e
 # ╠═49f027da-5dce-11eb-3fff-0fd590112019
 # ╠═672fef94-6351-11eb-0af1-652d5992e129
-# ╟─293e77fc-6347-11eb-3baa-35a2a2ea2059
+# ╠═49571046-68c2-11eb-071e-2709f8e40e48
+# ╠═2c63765e-68c3-11eb-317c-d1603846ca9c
+# ╠═521ebdb6-68c5-11eb-3bb2-8926b33ec780
+# ╠═4a052eb0-68cc-11eb-3cac-b74bcc789672
 # ╟─16fb0470-6351-11eb-104f-9de78182499d
 # ╠═594ab8f4-6347-11eb-3eb9-eb1cced757d4
 # ╟─eeee2d84-6352-11eb-3b69-0b3a53840e97
-# ╠═f40c4d82-6352-11eb-3954-3dd3fcc0d776
+# ╟─f40c4d82-6352-11eb-3954-3dd3fcc0d776
 # ╟─2b33df02-6353-11eb-07bf-c5a64c6c68d9
-# ╠═545a4586-6353-11eb-20f8-b5de7cf57054
+# ╟─545a4586-6353-11eb-20f8-b5de7cf57054
 # ╟─c4403112-6353-11eb-09ff-5b78fe6d4581
-# ╠═d150a918-6353-11eb-305b-2f50dadaeaed
+# ╟─d150a918-6353-11eb-305b-2f50dadaeaed
 # ╟─f106a442-6353-11eb-26fb-2fdc38c0bf80
 # ╠═f7a05460-6353-11eb-3b57-1de112c66e4a
 # ╟─bcb6b95e-6356-11eb-1662-397a7be9c496
