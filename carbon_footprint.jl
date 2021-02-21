@@ -19,13 +19,33 @@ using Distributions, Random
 # ╔═╡ 3b2050da-52c1-11eb-3b89-1d5b6eb2cf40
 using PlutoUI, Printf
 
+# ╔═╡ 8ae7009a-73c4-11eb-0374-25c172bd827e
+md"""
+# Carbon Footprint
+"""
+
+# ╔═╡ 94e65102-73c4-11eb-3cb4-81736a39e596
+md"""
+>A carbon footprint is the total greenhouse gas (GHG) emissions caused by an individual, event, organization, service, or product, expressed as carbon dioxide equivalent.   
+>Source: Wikipedia.
+
+From an individual perspective, GHG emissions may arise due to various activities such as burning fossil fuels, consumption of food and other manufactured products and many more.
+
+In this dashboard we limit the sources of GHG emissions to:
+1. Transportation
+2. Food consumption
+3. Streaming over the internet
+4. Electricity usage
+5. Purchases
+"""
+
 # ╔═╡ 0442fbb8-52c0-11eb-06ea-01e68e330d5d
 md"""
-# Dashboard
+# Carbon footprint Dashboard
 """
 
 # ╔═╡ 5fbcb6e6-52ca-11eb-3e8c-1bb7495dc15d
-md"""## Add emissions """
+md"""## Add your daily emissions here"""
 
 # ╔═╡ ec388b4a-52ca-11eb-097d-6760de18dd0e
 md"""---"""
@@ -36,66 +56,44 @@ Random.seed!(1234);
 # ╔═╡ 49571046-68c2-11eb-071e-2709f8e40e48
 struct Person
 	vehicles::Array{String,1}
+	transport_distribution::ContinuousUnivariateDistribution
 	foods::Array{String,1}
+	food_consumption::ContinuousUnivariateDistribution
 	streams::Array{String,1}
+	streaming_distribution::ContinuousUnivariateDistribution
 	country::String
+	electricity_usage::ContinuousUnivariateDistribution
 	purchases::Array{String,1}
+	purchase_rate::DiscreteUnivariateDistribution
 end
 
 # ╔═╡ 521ebdb6-68c5-11eb-3bb2-8926b33ec780
-person_1 = Person(
-	["car", "motorbike", "bus"],
-	["potatoes", "rice", "milk"],
+vegan = Person(
+	["carSharing", "electricVehicle"],
+	truncated(Normal(80, 20), 0, 1000),
+	["fruit", "tofu", "beans", "vegetables"],
+	truncated(Normal(200, 50), 0, 500),
 	["ultraHDVideo"],
+	truncated(Normal(150, 50), 0, 600),  # 240 mins is US average
 	"usa",
-	["jeans", "shirt", "shoes"]
+	truncated(Normal(20, 5), 0, 200),  # 30 kwh is US average
+	["jeans", "shirt", "shoes"],
+	Poisson(0.001)
 )
 
-# ╔═╡ 16fb0470-6351-11eb-104f-9de78182499d
-md"""
-Random transport
-"""
-
-# ╔═╡ eeee2d84-6352-11eb-3b69-0b3a53840e97
-md"""
-Random food
-"""
-
-# ╔═╡ 2b33df02-6353-11eb-07bf-c5a64c6c68d9
-md"""
-Random Streaming
-"""
-
-# ╔═╡ c4403112-6353-11eb-09ff-5b78fe6d4581
-md"""
-Random Electricity
-"""
-
-# ╔═╡ f106a442-6353-11eb-26fb-2fdc38c0bf80
-md"""
-Random Purchases
-"""
-
-# ╔═╡ bcb6b95e-6356-11eb-1662-397a7be9c496
-md"""
-Random result
-"""
-
-# ╔═╡ 5552f080-5dce-11eb-013e-6f856304cdcf
-# Source: https://ars.els-cdn.com/content/image/1-s2.0-S0959378020307883-mmc1.pdf
-# Electricity -
-# Food - Grain, vegetable, fruit, dairy, beef, pork, poultry, other meat, fish, alcohol, other beverage, confectionery, restaurant, other food
-# Income: bottom, low, middle, high, top
-
-# ╔═╡ c065c808-5dd2-11eb-10d6-576b82dc5ce0
-# Source: http://css.umich.edu/factsheets/carbon-footprint-factsheet
-# US
-# Different food distribution
-# Electricity
-
-# ╔═╡ 78d20618-5dd3-11eb-03f4-b9a0e5f50e9a
-# Source: https://www.pnas.org/content/117/32/19122
-# Has energy use data
+# ╔═╡ e370ae32-73ce-11eb-3865-8dec09d2fe6f
+meat_lover = Person(
+	["fossilFueledCar", "bus"],
+	truncated(Normal(80, 20), 0, 1000),
+	["coffee", "beef", "pork", "cheese"],
+	truncated(Normal(200, 50), 0, 500),
+	["ultraHDVideo", "fullHDVideo"],
+	truncated(Normal(200, 50), 0, 600),  # 240 mins is US average
+	"usa",
+	truncated(Normal(30, 5), 0, 200),  # 30 kwh is US average
+	["jeans", "shirt", "shoes"],
+	Poisson(0.01)
+)
 
 # ╔═╡ 054ae36c-52cb-11eb-25aa-31355bbed6de
 md"""# Sources """
@@ -141,12 +139,6 @@ begin
 	electricity_data = Dict(zip(keys(electricity_data_pw), values_pj))
 end
 
-# ╔═╡ d150a918-6353-11eb-305b-2f50dadaeaed
-begin
-	electricity_place = rand(keys(electricity_data))
-	electricity_amounts = floor.(Int, rand(Uniform(1, 1000)))
-end
-
 # ╔═╡ 1fc15990-4d41-11eb-0f5f-c309cf01fdfa
 md"""
 ## Food
@@ -160,13 +152,6 @@ Unit: $kgCO_2eq$
 
 # ╔═╡ 329e738a-52ba-11eb-22dd-fbfe2de89bb1
 food_data = read_json("data/carbon_footprint/food.json")
-
-# ╔═╡ f40c4d82-6352-11eb-3954-3dd3fcc0d776
-begin
-	n_food_types = rand((1, 2, 3, 4, 5))
-	food_types = rand(keys(food_data), n_food_types)
-	food_amounts = floor.(Int, rand(Uniform(20, 500), n_food_types))
-end
 
 # ╔═╡ fb596dc6-4d41-11eb-1dbd-6707e4fa7778
 md"""
@@ -185,13 +170,6 @@ streaming_data = Dict(["HDVideo" => "Video HD",
 			"fullHDVideo" => "Video - FullHD/1080p",
 			"ultraHDVideo" => "Video - UltraHD/4K",
 			"audioMP3" => "Audio - MP3"])
-
-# ╔═╡ 545a4586-6353-11eb-20f8-b5de7cf57054
-begin
-	n_stream_types = rand((1, 2, 3, 4))
-	stream_types = rand(keys(streaming_data), n_stream_types)
-	stream_amounts = floor.(Int, rand(Uniform(15, 600), n_stream_types))
-end
 
 # ╔═╡ cfd60bf8-4d43-11eb-00b7-bd162061b954
 begin
@@ -235,13 +213,6 @@ Unit: $kgCO_2eq$ per product
 
 # ╔═╡ 42eb4b3e-52ba-11eb-2178-11e1d2a887af
 purchase_data = read_json("data/carbon_footprint/purchase.json")
-
-# ╔═╡ f7a05460-6353-11eb-3b57-1de112c66e4a
-begin
-	n_purchase_types = rand((1, 2, 3, 4, 5))
-	purchase_types = rand(keys(purchase_data), n_purchase_types)
-	purchase_amounts = floor.(Int, rand(Uniform(1, 5), n_purchase_types))
-end
 
 # ╔═╡ e8574808-4d49-11eb-3515-2d66aadee9f2
 md"""
@@ -291,39 +262,6 @@ Unit: $kgCO_2eq/m$
 
 # ╔═╡ 04b51758-52b7-11eb-10f9-f5be66cf0dec
 transport_data = read_json("data/carbon_footprint/transport.json")
-
-# ╔═╡ 1b612ec2-52c1-11eb-22aa-3b406bd64623
-md"""
-Transport type
-$(@bind transport_select Select([k => k for (k, v) in transport_data]))
-
-Transport distance in km
-$(@bind transport_distance Slider(2:1000, default=10, show_value=true))
-
-Food type
-$(@bind food_select Select([k => k for (k, v) in food_data]))
-
-Food amount in grams
-$(@bind food_amount Slider(20:500, default=10, show_value=true))
-
-Streaming type
-$(@bind streaming_select Select(["HDVideo" => "Video HD",
-			"fullHDVideo" => "Video - FullHD/1080p",
-			"ultraHDVideo" => "Video - UltraHD/4K",
-			"audioMP3" => "Audio - MP3"]))
-
-Duration in minutes
-$(@bind streaming_amount Slider(15:600, default=60, show_value=true))
-
-Electricty location
-$(@bind electricity_select Select([k => k for (k, v) in electricity_data]))
-
-Electricity amount in kWh
-$(@bind electricity_amount Slider(1:1000, default=10, show_value=true))
-
-Recent purchases
-$(@bind purchase_select MultiSelect([k => k for (k, v) in purchase_data]))
-"""
 
 # ╔═╡ f5225d7a-5846-11eb-1497-c5d439899e6b
 begin
@@ -404,6 +342,98 @@ begin
 	end
 end
 
+# ╔═╡ 2c63765e-68c3-11eb-317c-d1603846ca9c
+begin
+    function daily_emissions(person::Person)::Dict
+        transport_distances = floor.(
+			Int,
+			rand(
+				person.transport_distribution,
+				length(person.vehicles)
+			)
+		)
+        food_amounts = floor.(
+			Int,
+			rand(
+				person.food_consumption,
+				length(person.foods)
+			)
+		)
+        stream_amounts = floor.(
+			Int,
+			rand(
+				person.streaming_distribution,
+				length(person.streams)
+			)
+		)
+        electricity_amounts = floor.(
+			Int,
+			rand(
+				person.electricity_usage,
+			)
+		)
+        purchase_amounts = floor.(
+			Int,
+			rand(
+				person.purchase_rate,
+				length(person.purchases)
+			)
+		)
+		result = emission_calculator(
+		person.vehicles,
+		transport_distances,
+		person.foods,
+		food_amounts,
+		person.streams,
+		stream_amounts,
+		person.country,
+		electricity_amounts,
+		person.purchases,
+		purchase_amounts,
+		)
+		return result
+    end
+end
+
+# ╔═╡ 4a052eb0-68cc-11eb-3cac-b74bcc789672
+reduce((x, y) -> merge(+, x, y), [daily_emissions(vegan) for i in range(1, stop=365)])  # wrong
+
+# ╔═╡ 8212a216-73cf-11eb-19e6-cd8e66777289
+daily_emissions(meat_lover)
+
+# ╔═╡ 1b612ec2-52c1-11eb-22aa-3b406bd64623
+md"""
+Transport type
+$(@bind transport_select Select([k => k for (k, v) in transport_data]))
+
+Transport distance in km
+$(@bind transport_distance Slider(2:1000, default=10, show_value=true))
+
+Food type
+$(@bind food_select Select([k => k for (k, v) in food_data]))
+
+Food amount in grams
+$(@bind food_amount Slider(20:500, default=10, show_value=true))
+
+Streaming type
+$(@bind streaming_select Select(["HDVideo" => "Video HD",
+			"fullHDVideo" => "Video - FullHD/1080p",
+			"ultraHDVideo" => "Video - UltraHD/4K",
+			"audioMP3" => "Audio - MP3"]))
+
+Duration in minutes
+$(@bind streaming_amount Slider(15:600, default=60, show_value=true))
+
+Electricty location
+$(@bind electricity_select Select([k => k for (k, v) in electricity_data]))
+
+Electricity amount in kWh
+$(@bind electricity_amount Slider(1:1000, default=10, show_value=true))
+
+Recent purchases
+$(@bind purchase_select MultiSelect([k => k for (k, v) in purchase_data]))
+"""
+
 # ╔═╡ 9388aa8a-52c9-11eb-0dd8-3184bcfb93b2
 begin
 	emissions_data = emission_calculator(
@@ -428,7 +458,7 @@ end
 
 # ╔═╡ 0a38c120-52c6-11eb-2ec5-e7780b3e11ec
 md"""
-## Emissions calculation
+## Your carbon footprint:
 
 1. Transport emissions = $(@sprintf("%.3f", transport_emissions)) kgCO2eq
 
@@ -444,114 +474,28 @@ md"""
 
 """
 
-# ╔═╡ 2c63765e-68c3-11eb-317c-d1603846ca9c
-begin
-    function daily_emissions(person::Person)::Dict
-        transport_distances = floor.(
-			Int,
-			rand(
-				truncated(Normal(100, 50), 0, 1000),
-				length(person.vehicles)
-			)
-		)
-        food_amounts = floor.(
-			Int,
-			rand(
-				truncated(Normal(200, 50), 0, 500),
-				length(person.foods)
-			)
-		)
-        stream_amounts = floor.(
-			Int,
-			rand(
-				truncated(Normal(200, 50), 0, 600),
-				length(person.streams)
-			)
-		)
-        electricity_amounts = floor.(
-			Int,
-			rand(truncated(Normal(100, 20), 0, 1000))
-		)
-        purchase_amounts = floor.(
-			Int,
-			rand(
-				Poisson(0.01),
-				length(person.purchases)
-			)
-		)
-		result = emission_calculator(
-		person.vehicles,
-		transport_distances,
-		person.foods,
-		food_amounts,
-		person.streams,
-		stream_amounts,
-		person.country,
-		electricity_amounts,
-		person.purchases,
-		purchase_amounts,
-		)
-		return result
-    end
-end
-
-# ╔═╡ 4a052eb0-68cc-11eb-3cac-b74bcc789672
-daily_emissions(person_1)
-
-# ╔═╡ 594ab8f4-6347-11eb-3eb9-eb1cced757d4
-begin
-	n_transport_vehicles = rand((1, 2, 3))
-	transport_vehicles = rand(keys(transport_data), n_transport_vehicles)
-	transport_distances = floor.(Int, rand(Uniform(2, 1000), n_transport_vehicles))
-end
-
-# ╔═╡ 3ce4671c-6356-11eb-14bd-ddf8e43bc8de
-result = emission_calculator(
-		transport_vehicles,
-		transport_distances,
-		food_types,
-		food_amounts,
-		stream_types,
-		stream_amounts,
-		electricity_place,
-		electricity_amounts,
-		purchase_types,
-		purchase_amounts,
-)
-
 # ╔═╡ 14743ea4-52c1-11eb-0cb4-8d3523a8f5ef
 md"""---"""
 
 # ╔═╡ Cell order:
+# ╟─8ae7009a-73c4-11eb-0374-25c172bd827e
+# ╟─94e65102-73c4-11eb-3cb4-81736a39e596
 # ╟─0442fbb8-52c0-11eb-06ea-01e68e330d5d
 # ╟─5fbcb6e6-52ca-11eb-3e8c-1bb7495dc15d
-# ╠═1b612ec2-52c1-11eb-22aa-3b406bd64623
 # ╟─f5225d7a-5846-11eb-1497-c5d439899e6b
 # ╟─8aa42c6e-6354-11eb-3c43-cb16327595c2
 # ╟─9388aa8a-52c9-11eb-0dd8-3184bcfb93b2
 # ╟─0a38c120-52c6-11eb-2ec5-e7780b3e11ec
 # ╟─ec388b4a-52ca-11eb-097d-6760de18dd0e
-# ╠═49f027da-5dce-11eb-3fff-0fd590112019
-# ╠═672fef94-6351-11eb-0af1-652d5992e129
-# ╠═49571046-68c2-11eb-071e-2709f8e40e48
-# ╠═2c63765e-68c3-11eb-317c-d1603846ca9c
-# ╠═521ebdb6-68c5-11eb-3bb2-8926b33ec780
+# ╟─49f027da-5dce-11eb-3fff-0fd590112019
+# ╟─672fef94-6351-11eb-0af1-652d5992e129
+# ╟─49571046-68c2-11eb-071e-2709f8e40e48
+# ╟─2c63765e-68c3-11eb-317c-d1603846ca9c
+# ╟─1b612ec2-52c1-11eb-22aa-3b406bd64623
+# ╟─521ebdb6-68c5-11eb-3bb2-8926b33ec780
 # ╠═4a052eb0-68cc-11eb-3cac-b74bcc789672
-# ╟─16fb0470-6351-11eb-104f-9de78182499d
-# ╠═594ab8f4-6347-11eb-3eb9-eb1cced757d4
-# ╟─eeee2d84-6352-11eb-3b69-0b3a53840e97
-# ╟─f40c4d82-6352-11eb-3954-3dd3fcc0d776
-# ╟─2b33df02-6353-11eb-07bf-c5a64c6c68d9
-# ╟─545a4586-6353-11eb-20f8-b5de7cf57054
-# ╟─c4403112-6353-11eb-09ff-5b78fe6d4581
-# ╟─d150a918-6353-11eb-305b-2f50dadaeaed
-# ╟─f106a442-6353-11eb-26fb-2fdc38c0bf80
-# ╠═f7a05460-6353-11eb-3b57-1de112c66e4a
-# ╟─bcb6b95e-6356-11eb-1662-397a7be9c496
-# ╠═3ce4671c-6356-11eb-14bd-ddf8e43bc8de
-# ╠═5552f080-5dce-11eb-013e-6f856304cdcf
-# ╠═c065c808-5dd2-11eb-10d6-576b82dc5ce0
-# ╠═78d20618-5dd3-11eb-03f4-b9a0e5f50e9a
+# ╟─e370ae32-73ce-11eb-3865-8dec09d2fe6f
+# ╠═8212a216-73cf-11eb-19e6-cd8e66777289
 # ╟─054ae36c-52cb-11eb-25aa-31355bbed6de
 # ╠═3b2050da-52c1-11eb-3b89-1d5b6eb2cf40
 # ╠═b4a152f0-4d4f-11eb-106b-b58e9f1495a9
