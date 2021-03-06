@@ -13,11 +13,11 @@ macro bind(def, element)
     end
 end
 
-# ╔═╡ 49f027da-5dce-11eb-3fff-0fd590112019
-using Distributions, Random
-
 # ╔═╡ 3b2050da-52c1-11eb-3b89-1d5b6eb2cf40
 using PlutoUI, Printf
+
+# ╔═╡ 49f027da-5dce-11eb-3fff-0fd590112019
+using Distributions, Random
 
 # ╔═╡ 8ae7009a-73c4-11eb-0374-25c172bd827e
 md"""
@@ -39,92 +39,40 @@ In this dashboard we limit the sources of GHG emissions to:
 5. Purchases
 """
 
-# ╔═╡ 0442fbb8-52c0-11eb-06ea-01e68e330d5d
-md"""
-# Carbon footprint Dashboard
+# ╔═╡ 054ae36c-52cb-11eb-25aa-31355bbed6de
+md"""## Sources
+
+Most of the data was obtained from [NMF-earth](https://github.com/NMF-earth/carbon-footprint). The direct sources are listed along with the source descriptions below:
 """
 
-# ╔═╡ 5fbcb6e6-52ca-11eb-3e8c-1bb7495dc15d
-md"""## Add your daily emissions here"""
-
-# ╔═╡ ec388b4a-52ca-11eb-097d-6760de18dd0e
-md"""---"""
-
-# ╔═╡ 672fef94-6351-11eb-0af1-652d5992e129
-Random.seed!(1234);
-
-# ╔═╡ 49571046-68c2-11eb-071e-2709f8e40e48
-struct Person
-	vehicles::Array{String,1}
-	transport_distribution::ContinuousUnivariateDistribution
-	foods::Array{String,1}
-	food_consumption::ContinuousUnivariateDistribution
-	streams::Array{String,1}
-	streaming_distribution::ContinuousUnivariateDistribution
-	country::String
-	electricity_usage::ContinuousUnivariateDistribution
-	purchases::Array{String,1}
-	purchase_rate::DiscreteUnivariateDistribution
-end
-
-# ╔═╡ 521ebdb6-68c5-11eb-3bb2-8926b33ec780
-vegan = Person(
-	["carSharing", "electricVehicle"],
-	truncated(Normal(80, 20), 0, 1000),
-	["fruit", "tofu", "beans", "vegetables"],
-	truncated(Normal(200, 50), 0, 500),
-	["ultraHDVideo"],
-	truncated(Normal(150, 50), 0, 600),  # 240 mins is US average
-	"usa",
-	truncated(Normal(20, 5), 0, 200),  # 30 kwh is US average
-	["jeans", "shirt", "shoes"],
-	Poisson(0.001)
-)
-
-# ╔═╡ e370ae32-73ce-11eb-3865-8dec09d2fe6f
-meat_lover = Person(
-	["fossilFueledCar", "bus"],
-	truncated(Normal(80, 20), 0, 1000),
-	["coffee", "beef", "pork", "cheese"],
-	truncated(Normal(200, 50), 0, 500),
-	["ultraHDVideo", "fullHDVideo"],
-	truncated(Normal(200, 50), 0, 600),  # 240 mins is US average
-	"usa",
-	truncated(Normal(30, 5), 0, 200),  # 30 kwh is US average
-	["jeans", "shirt", "shoes"],
-	Poisson(0.01)
-)
-
-# ╔═╡ 054ae36c-52cb-11eb-25aa-31355bbed6de
-md"""# Sources """
-
 # ╔═╡ b4a152f0-4d4f-11eb-106b-b58e9f1495a9
-import JSON
+import JSON, HTTP
+
+# ╔═╡ 69f1de08-7e7f-11eb-1df1-c792e5e3ec57
+md"""
+First we write a function `read_json` to read `JSON` data from our [GitHub repository](https://github.com/quantumbrake/ghg-dashboard/) into a `Dict`
+"""
 
 # ╔═╡ cedb71ac-52b9-11eb-19e7-9f433ffb4f14
-function read_json(file::String)::Dict
-	data = Dict
-	open(file, "r") do io
-		raw_string = read(io, String)
-		data = JSON.parse(raw_string)
-	end
+function read_json(
+	file::String;
+	repo::String = "https://raw.githubusercontent.com/quantumbrake/ghg-dashboard/main/"
+	)::Dict
+	file_url = repo * file
+	raw_string = String(HTTP.get(file_url).body)
+	data = JSON.parse(raw_string)
 	return data
-end
-
-# ╔═╡ 227d45a0-4d45-11eb-0cca-af99bc390097
-function kwatts_to_joules(x::Float64)::Float64
-		x * 3.6 * (10 ^ 6);
 end
 
 # ╔═╡ b2b598f8-4d3f-11eb-310d-7740ecc9d222
 md"""
-## Electricity
+### 1. Electricity
 
-Unit: $kgCO_2eq/J$
+Unit: $\frac{kgCO_2eq}{J}$
 
-Unit of data: $kgCO_2eq/kWh$
+Unit of imported data: $\frac{kgCO_2eq}{kWh}$
 
-Conversion factor: $(x / 3.6) * 10^{-6}$
+Conversion factor (imported data -> data): $(\frac{x}{3.6}) * 10^{-6}$
 
 **Sources**:
 - https://github.com/carbonalyser/Carbonalyser
@@ -141,7 +89,7 @@ end
 
 # ╔═╡ 1fc15990-4d41-11eb-0f5f-c309cf01fdfa
 md"""
-## Food
+### 2. Food
 
 Unit: $kgCO_2eq$
 
@@ -155,7 +103,9 @@ food_data = read_json("data/carbon_footprint/food.json")
 
 # ╔═╡ fb596dc6-4d41-11eb-1dbd-6707e4fa7778
 md"""
-## Internet
+### 3. Internet
+
+The emissions involved in moving data between the device and datacenter through the network.
 
 Unit: $kgCO_2eq$
 
@@ -165,67 +115,52 @@ Unit: $kgCO_2eq$
 - https://www.carbonbrief.org/factcheck-what-is-the-carbon-footprint-of-streaming-video-on-netflix
 """
 
-# ╔═╡ 83af9228-6353-11eb-0e5b-4550ac55ca4f
-streaming_data = Dict(["HDVideo" => "Video HD",
-			"fullHDVideo" => "Video - FullHD/1080p",
-			"ultraHDVideo" => "Video - UltraHD/4K",
-			"audioMP3" => "Audio - MP3"])
-
-# ╔═╡ cfd60bf8-4d43-11eb-00b7-bd162061b954
-begin
-	function internet_carbonimpact(
-			duration::Float64,
-			data_weight::Float64,
-			electricity_intensity::Float64
-		)::Float64
-		factor = Dict(
-			"datacenter" => kwatts_to_joules(0.007 * (10 ^ (-9))) / 8,
-			"network" => kwatts_to_joules(0.058 * (10 ^ (-9))) / 8,
-			"device" => kwatts_to_joules(0.055 / (60 * 60))
-		)
-		ghg_datacenter = data_weight * get(factor, "datacenter", 0.0) * electricity_data["world"]
-		ghg_network = data_weight * get(factor, "network", 0.0) * electricity_data["world"]
-		ghg_device = duration * get(factor, "device", 0.0) * electricity_intensity
-		total = ghg_datacenter + ghg_network + ghg_device
-		return total
-	end
+# ╔═╡ 227d45a0-4d45-11eb-0cca-af99bc390097
+function kwatts_to_joules(x::Float64)::Float64
+		x * 3.6 * (10 ^ 6);
 end
 
-# ╔═╡ cccb00f0-4d46-11eb-027b-ab6e07ce3ce5
+# ╔═╡ d4764dc0-7e81-11eb-29da-adbfa04c613b
 md"""
-## Purchases
-
-Unit: $kgCO_2eq$ per product
-
-**Sources Clothing**:
-- https://www.ademe.fr/sites/default/files/assets/documents/poids_carbone-biens-equipement-201809-rapport.pdf
-
-**Sources Tech**:
-- https://www.apple.com/lae/environment/pdf/products/iphone/iPhone_11_Pro_PER_sept2019.pdf
-- https://www.apple.com/lae/environment/pdf/products/ipad/iPad_PER_sept2019.pdf
-- https://www.apple.com/lae/environment/pdf/products/desktops/21.5-inch_iMac_with_Retina4KDisplay_PER_Mar2019.pdf
-- https://www.apple.com/lae/environment/pdf/products/notebooks/13-inch_MacBookPro_PER_June2019.pdf
-- https://www.bilans-ges.ademe.fr/fr/basecarbone/donnees-consulter/liste-element?recherche=T%C3%A9l%C3%A9vision
-
-**Sources Transport**:
--   https://www.lowcvp.org.uk/assets/workingdocuments/MC-P-11-15a%20Lifecycle%20emissions%20report.pdf
+We create a function to calculate the GHG emissions involved in transmitting `dataweight` amount of data for a `duration` in a country with electricity emissions equal to `electricity_intensity`
 """
 
-# ╔═╡ 42eb4b3e-52ba-11eb-2178-11e1d2a887af
-purchase_data = read_json("data/carbon_footprint/purchase.json")
+# ╔═╡ cfd60bf8-4d43-11eb-00b7-bd162061b954
+function internet_carbonimpact(
+		duration::Float64,
+		data_weight::Float64,
+		electricity_intensity::Float64
+	)::Float64
+	factor = Dict(
+		"datacenter" => kwatts_to_joules(0.007 * (10 ^ (-9))) / 8,
+		"network" => kwatts_to_joules(0.058 * (10 ^ (-9))) / 8,
+		"device" => kwatts_to_joules(0.055 / (60 * 60))
+	)
+	ghg_datacenter = data_weight * get(factor, "datacenter", 0.0) * electricity_data["world"]
+	ghg_network = data_weight * get(factor, "network", 0.0) * electricity_data["world"]
+	ghg_device = duration * get(factor, "device", 0.0) * electricity_intensity
+	total = ghg_datacenter + ghg_network + ghg_device
+	return total
+end
 
 # ╔═╡ e8574808-4d49-11eb-3515-2d66aadee9f2
 md"""
-## Streaming
+### 4. Streaming
 
 Unit: $bit/s$ -> $kgCO_2eq$
 
-**Sources**:
+**Standards used**:
 - HD / 720p : 1.21 GB
 - Full HD / 1080p : 7.02 GB
 - Ultra HD / 2160p : 35.73 Gb
 - MP3 song at 192 kbps : 3.8 MB
 """
+
+# ╔═╡ 83af9228-6353-11eb-0e5b-4550ac55ca4f
+streaming_data = Dict(["HDVideo" => "Video HD",
+			"fullHDVideo" => "Video - FullHD/1080p",
+			"ultraHDVideo" => "Video - UltraHD/4K",
+			"audioMP3" => "Audio - MP3"])
 
 # ╔═╡ 5e3ae372-4d4a-11eb-3e76-e7b1545f3759
 begin
@@ -250,9 +185,32 @@ begin
 	end
 end
 
+# ╔═╡ cccb00f0-4d46-11eb-027b-ab6e07ce3ce5
+md"""
+### 5. Purchases
+
+Unit: $kgCO_2eq$ per product
+
+**Sources Clothing**:
+- https://www.ademe.fr/sites/default/files/assets/documents/poids_carbone-biens-equipement-201809-rapport.pdf
+
+**Sources Tech**:
+- https://www.apple.com/lae/environment/pdf/products/iphone/iPhone_11_Pro_PER_sept2019.pdf
+- https://www.apple.com/lae/environment/pdf/products/ipad/iPad_PER_sept2019.pdf
+- https://www.apple.com/lae/environment/pdf/products/desktops/21.5-inch_iMac_with_Retina4KDisplay_PER_Mar2019.pdf
+- https://www.apple.com/lae/environment/pdf/products/notebooks/13-inch_MacBookPro_PER_June2019.pdf
+- https://www.bilans-ges.ademe.fr/fr/basecarbone/donnees-consulter/liste-element?recherche=T%C3%A9l%C3%A9vision
+
+**Sources Transport**:
+-   https://www.lowcvp.org.uk/assets/workingdocuments/MC-P-11-15a%20Lifecycle%20emissions%20report.pdf
+"""
+
+# ╔═╡ 42eb4b3e-52ba-11eb-2178-11e1d2a887af
+purchase_data = read_json("data/carbon_footprint/purchase.json")
+
 # ╔═╡ cd98af32-4d4b-11eb-2ffb-edbe9a3c069b
 md"""
-## Transport
+### 6. Transport
 
 Unit: $kgCO_2eq/m$
 
@@ -262,6 +220,14 @@ Unit: $kgCO_2eq/m$
 
 # ╔═╡ 04b51758-52b7-11eb-10f9-f5be66cf0dec
 transport_data = read_json("data/carbon_footprint/transport.json")
+
+# ╔═╡ 0442fbb8-52c0-11eb-06ea-01e68e330d5d
+md"""
+# Carbon footprint Dashboard
+"""
+
+# ╔═╡ 5fbcb6e6-52ca-11eb-3e8c-1bb7495dc15d
+md"""## Add your daily emissions here"""
 
 # ╔═╡ f5225d7a-5846-11eb-1497-c5d439899e6b
 begin
@@ -342,6 +308,26 @@ begin
 	end
 end
 
+# ╔═╡ ec388b4a-52ca-11eb-097d-6760de18dd0e
+md"""---"""
+
+# ╔═╡ 672fef94-6351-11eb-0af1-652d5992e129
+Random.seed!(1234);
+
+# ╔═╡ 49571046-68c2-11eb-071e-2709f8e40e48
+struct Person
+	vehicles::Array{String,1}
+	transport_distribution::ContinuousUnivariateDistribution
+	foods::Array{String,1}
+	food_consumption::ContinuousUnivariateDistribution
+	streams::Array{String,1}
+	streaming_distribution::ContinuousUnivariateDistribution
+	country::String
+	electricity_usage::ContinuousUnivariateDistribution
+	purchases::Array{String,1}
+	purchase_rate::DiscreteUnivariateDistribution
+end
+
 # ╔═╡ 2c63765e-68c3-11eb-317c-d1603846ca9c
 begin
     function daily_emissions(person::Person)::Dict
@@ -394,12 +380,6 @@ begin
 		return result
     end
 end
-
-# ╔═╡ 4a052eb0-68cc-11eb-3cac-b74bcc789672
-reduce((x, y) -> merge(+, x, y), [daily_emissions(vegan) for i in range(1, stop=365)])  # wrong
-
-# ╔═╡ 8212a216-73cf-11eb-19e6-cd8e66777289
-daily_emissions(meat_lover)
 
 # ╔═╡ 1b612ec2-52c1-11eb-22aa-3b406bd64623
 md"""
@@ -474,13 +454,70 @@ md"""
 
 """
 
+# ╔═╡ 521ebdb6-68c5-11eb-3bb2-8926b33ec780
+vegan = Person(
+	["carSharing", "electricVehicle"],
+	truncated(Normal(80, 20), 0, 1000),
+	["fruit", "tofu", "beans", "vegetables"],
+	truncated(Normal(200, 50), 0, 500),
+	["ultraHDVideo"],
+	truncated(Normal(150, 50), 0, 600),  # 240 mins is US average
+	"usa",
+	truncated(Normal(20, 5), 0, 200),  # 30 kwh is US average
+	["jeans", "shirt", "shoes"],
+	Poisson(0.001)
+)
+
+# ╔═╡ 4a052eb0-68cc-11eb-3cac-b74bcc789672
+reduce((x, y) -> merge(+, x, y), [daily_emissions(vegan) for i in range(1, stop=365)])  # wrong
+
+# ╔═╡ e370ae32-73ce-11eb-3865-8dec09d2fe6f
+meat_lover = Person(
+	["fossilFueledCar", "bus"],
+	truncated(Normal(80, 20), 0, 1000),
+	["coffee", "beef", "pork", "cheese"],
+	truncated(Normal(200, 50), 0, 500),
+	["ultraHDVideo", "fullHDVideo"],
+	truncated(Normal(200, 50), 0, 600),  # 240 mins is US average
+	"usa",
+	truncated(Normal(30, 5), 0, 200),  # 30 kwh is US average
+	["jeans", "shirt", "shoes"],
+	Poisson(0.01)
+)
+
+# ╔═╡ 8212a216-73cf-11eb-19e6-cd8e66777289
+daily_emissions(meat_lover)
+
+# ╔═╡ 3f0df1ac-7e81-11eb-3f5e-efbe2314b825
+md"""---"""
+
 # ╔═╡ 14743ea4-52c1-11eb-0cb4-8d3523a8f5ef
 md"""---"""
 
 # ╔═╡ Cell order:
 # ╟─8ae7009a-73c4-11eb-0374-25c172bd827e
 # ╟─94e65102-73c4-11eb-3cb4-81736a39e596
+# ╟─054ae36c-52cb-11eb-25aa-31355bbed6de
+# ╠═b4a152f0-4d4f-11eb-106b-b58e9f1495a9
+# ╟─69f1de08-7e7f-11eb-1df1-c792e5e3ec57
+# ╠═cedb71ac-52b9-11eb-19e7-9f433ffb4f14
+# ╟─b2b598f8-4d3f-11eb-310d-7740ecc9d222
+# ╟─0fcd983e-52b7-11eb-2c1f-13d00c8b4c43
+# ╟─1fc15990-4d41-11eb-0f5f-c309cf01fdfa
+# ╟─329e738a-52ba-11eb-22dd-fbfe2de89bb1
+# ╟─fb596dc6-4d41-11eb-1dbd-6707e4fa7778
+# ╠═227d45a0-4d45-11eb-0cca-af99bc390097
+# ╟─d4764dc0-7e81-11eb-29da-adbfa04c613b
+# ╠═cfd60bf8-4d43-11eb-00b7-bd162061b954
+# ╟─e8574808-4d49-11eb-3515-2d66aadee9f2
+# ╟─83af9228-6353-11eb-0e5b-4550ac55ca4f
+# ╟─5e3ae372-4d4a-11eb-3e76-e7b1545f3759
+# ╟─cccb00f0-4d46-11eb-027b-ab6e07ce3ce5
+# ╠═42eb4b3e-52ba-11eb-2178-11e1d2a887af
+# ╟─cd98af32-4d4b-11eb-2ffb-edbe9a3c069b
+# ╟─04b51758-52b7-11eb-10f9-f5be66cf0dec
 # ╟─0442fbb8-52c0-11eb-06ea-01e68e330d5d
+# ╠═3b2050da-52c1-11eb-3b89-1d5b6eb2cf40
 # ╟─5fbcb6e6-52ca-11eb-3e8c-1bb7495dc15d
 # ╟─f5225d7a-5846-11eb-1497-c5d439899e6b
 # ╟─8aa42c6e-6354-11eb-3c43-cb16327595c2
@@ -496,22 +533,5 @@ md"""---"""
 # ╠═4a052eb0-68cc-11eb-3cac-b74bcc789672
 # ╟─e370ae32-73ce-11eb-3865-8dec09d2fe6f
 # ╠═8212a216-73cf-11eb-19e6-cd8e66777289
-# ╟─054ae36c-52cb-11eb-25aa-31355bbed6de
-# ╠═3b2050da-52c1-11eb-3b89-1d5b6eb2cf40
-# ╠═b4a152f0-4d4f-11eb-106b-b58e9f1495a9
-# ╟─cedb71ac-52b9-11eb-19e7-9f433ffb4f14
-# ╟─227d45a0-4d45-11eb-0cca-af99bc390097
-# ╟─b2b598f8-4d3f-11eb-310d-7740ecc9d222
-# ╟─0fcd983e-52b7-11eb-2c1f-13d00c8b4c43
-# ╟─1fc15990-4d41-11eb-0f5f-c309cf01fdfa
-# ╟─329e738a-52ba-11eb-22dd-fbfe2de89bb1
-# ╟─fb596dc6-4d41-11eb-1dbd-6707e4fa7778
-# ╟─83af9228-6353-11eb-0e5b-4550ac55ca4f
-# ╟─cfd60bf8-4d43-11eb-00b7-bd162061b954
-# ╟─cccb00f0-4d46-11eb-027b-ab6e07ce3ce5
-# ╟─42eb4b3e-52ba-11eb-2178-11e1d2a887af
-# ╟─e8574808-4d49-11eb-3515-2d66aadee9f2
-# ╟─5e3ae372-4d4a-11eb-3e76-e7b1545f3759
-# ╟─cd98af32-4d4b-11eb-2ffb-edbe9a3c069b
-# ╟─04b51758-52b7-11eb-10f9-f5be66cf0dec
+# ╟─3f0df1ac-7e81-11eb-3f5e-efbe2314b825
 # ╟─14743ea4-52c1-11eb-0cb4-8d3523a8f5ef

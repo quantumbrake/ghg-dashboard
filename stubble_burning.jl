@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.12.18
+# v0.12.20
 
 using Markdown
 using InteractiveUtils
@@ -60,13 +60,13 @@ end;
 # ╔═╡ e986fbd0-4d42-11eb-3342-ff3bb8eff1ad
 md"# What is the global warming impact of burning crop residue in Northern India?
 
-> Note, I am not an expert in this field. So results to be interpreted with caution.
+> Note, we are not experts in this field. So results to be interpreted with caution.
 
 To clear the fields of the residue from the previous rice crop and make way for the subsequent wheat crop, some farmers in Northern India burn what's left in the field. Called crop residue burning or stubble burning, this happens in the months of October and November [1]. Manually clearing the residue, or using machines built for the purpose, may cost more [10].
 
-I was interested in understanding the global warming impact of stubble burning. It contributes to global warming in at least two ways - through the release of greenhouse gases (GHGs) and the obvious one - the heat from the burning the stubble. I was interested in the former.
+I was interested in understanding the global warming impact of stubble burning. It contributes to global warming in at least two ways - through the release of greenhouse gases (GHGs) and the obvious one - the heat from burning the stubble. I was interested in the former.
 
-## How are greenhouse gas global warming potential measured?
+## How is greenhouse gas global warming potential measured?
 
 GHGs like carbon dioxide ($CO_2$) and methane ($CH_4$) have different propensities to cause global warming. Hence global warming potential is measured in CO2eq or, $CO_2$ equivalents. That is, any contribution from say, methane, is understood as the contribution coming from an equivalent amount of $CO_2$.
 
@@ -206,10 +206,10 @@ md"
 
 
 # ╔═╡ Cell order:
-# ╟─81888440-4d42-11eb-1bf5-0f0108717ed6
-# ╟─ee1dacd0-52e6-11eb-3486-0bb6ee49c951
-# ╟─e4abc46e-52e6-11eb-19e0-19a94e1257c6
-# ╟─e986fbd0-4d42-11eb-3342-ff3bb8eff1ad
+# ╠═81888440-4d42-11eb-1bf5-0f0108717ed6
+# ╠═ee1dacd0-52e6-11eb-3486-0bb6ee49c951
+# ╠═e4abc46e-52e6-11eb-19e0-19a94e1257c6
+# ╠═e986fbd0-4d42-11eb-3342-ff3bb8eff1ad
 # ╟─8aa500ee-52e5-11eb-034e-15d346c9433e
 # ╟─0e807710-636c-11eb-25aa-470687ff7834
 # ╟─f4406d20-586b-11eb-0d35-51da6f73592e
