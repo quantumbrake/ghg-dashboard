@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.12.20
+# v0.12.21
 
 using Markdown
 using InteractiveUtils
@@ -26,23 +26,23 @@ md"""
 
 # ╔═╡ 94e65102-73c4-11eb-3cb4-81736a39e596
 md"""
->A carbon footprint is the total greenhouse gas (GHG) emissions caused by an individual, event, organization, service, or product, expressed as carbon dioxide equivalent.   
+>A carbon footprint is the total greenhouse gas (GHG) emissions caused by an individual, event, organization, service, or product, expressed as carbon dioxide equivalent.  
 >Source: Wikipedia.
 
-From an individual perspective, GHG emissions may arise due to various activities such as burning fossil fuels, consumption of food and other manufactured products and many more.
+From an individual perspective, GHG emissions may arise due to various activities such as driving a car, consumption of food and other manufactured products and many more.
 
 In this dashboard we limit the sources of GHG emissions to:
-1. Transportation
+1. Electricity usage
 2. Food consumption
 3. Streaming over the internet
-4. Electricity usage
-5. Purchases
+4. Purchase of manufactured goods
+5. Transportation
 """
 
 # ╔═╡ 054ae36c-52cb-11eb-25aa-31355bbed6de
-md"""## Sources
+md"""## Sources of GHG emissions
 
-Most of the data was obtained from [NMF-earth](https://github.com/NMF-earth/carbon-footprint). The direct sources are listed along with the source descriptions below:
+Most of the data presented here was obtained from [NMF-earth](https://github.com/NMF-earth/carbon-footprint). The direct sources of the data are listed along with the source descriptions below:
 """
 
 # ╔═╡ b4a152f0-4d4f-11eb-106b-b58e9f1495a9
@@ -66,7 +66,9 @@ end
 
 # ╔═╡ b2b598f8-4d3f-11eb-310d-7740ecc9d222
 md"""
-### 1. Electricity
+### 1. Electricity usage
+
+The emissions involved in generating 1 Joule of energy in various countries
 
 Unit: $\frac{kgCO_2eq}{J}$
 
@@ -89,9 +91,11 @@ end
 
 # ╔═╡ 1fc15990-4d41-11eb-0f5f-c309cf01fdfa
 md"""
-### 2. Food
+### 2. Food consumption
 
-Unit: $kgCO_2eq$
+The emissions involved in producing 1 item of various foods
+
+Unit: $\frac{kgCO_2eq}{item}$
 
 **Sources**:
 - http://www.greeneatz.com/foods-carbon-footprint.html
@@ -101,11 +105,30 @@ Unit: $kgCO_2eq$
 # ╔═╡ 329e738a-52ba-11eb-22dd-fbfe2de89bb1
 food_data = read_json("data/carbon_footprint/food.json")
 
+# ╔═╡ e8574808-4d49-11eb-3515-2d66aadee9f2
+md"""
+### 3. Streaming over the internet
+
+The emissions involved in streaming various content
+
+Unit: $\frac{kgCO_2eq}{minute}$
+
+**Standards used to calculate data size of streaming content**:
+- HD / 720p : 1.21 GB (~ 2.5 hours)
+- Full HD / 1080p : 7.02 GB (~ 2.5 hours)
+- Ultra HD / 2160p : 35.73 Gb (~ 2.5 hours)
+- MP3 song at 192 kbps : 3.8 MB (~ 2.5 mins)
+"""
+
+# ╔═╡ 83af9228-6353-11eb-0e5b-4550ac55ca4f
+streaming_data = Dict(["HDVideo" => "Video HD",
+			"fullHDVideo" => "Video - FullHD/1080p",
+			"ultraHDVideo" => "Video - UltraHD/4K",
+			"audioMP3" => "Audio - MP3"])
+
 # ╔═╡ fb596dc6-4d41-11eb-1dbd-6707e4fa7778
 md"""
-### 3. Internet
-
-The emissions involved in moving data between the device and datacenter through the network.
+Calculating the emissions involved in moving data between the device and datacenter through the network.
 
 Unit: $kgCO_2eq$
 
@@ -122,7 +145,7 @@ end
 
 # ╔═╡ d4764dc0-7e81-11eb-29da-adbfa04c613b
 md"""
-We create a function to calculate the GHG emissions involved in transmitting `dataweight` amount of data for a `duration` in a country with electricity emissions equal to `electricity_intensity`
+We create a function to calculate the GHG emissions involved in transmitting `dataweight` (in bits) amount of data for a `duration` (in seconds) in a country with electricity emissions equal to `electricity_intensity` (in Joules)
 """
 
 # ╔═╡ cfd60bf8-4d43-11eb-00b7-bd162061b954
@@ -143,24 +166,10 @@ function internet_carbonimpact(
 	return total
 end
 
-# ╔═╡ e8574808-4d49-11eb-3515-2d66aadee9f2
+# ╔═╡ c25bfd94-7f7e-11eb-32ff-6fb869cd3b43
 md"""
-### 4. Streaming
-
-Unit: $bit/s$ -> $kgCO_2eq$
-
-**Standards used**:
-- HD / 720p : 1.21 GB
-- Full HD / 1080p : 7.02 GB
-- Ultra HD / 2160p : 35.73 Gb
-- MP3 song at 192 kbps : 3.8 MB
+Update ...
 """
-
-# ╔═╡ 83af9228-6353-11eb-0e5b-4550ac55ca4f
-streaming_data = Dict(["HDVideo" => "Video HD",
-			"fullHDVideo" => "Video - FullHD/1080p",
-			"ultraHDVideo" => "Video - UltraHD/4K",
-			"audioMP3" => "Audio - MP3"])
 
 # ╔═╡ 5e3ae372-4d4a-11eb-3e76-e7b1545f3759
 begin
@@ -187,9 +196,11 @@ end
 
 # ╔═╡ cccb00f0-4d46-11eb-027b-ab6e07ce3ce5
 md"""
-### 5. Purchases
+### 4. Purchase of manufactured goods
 
-Unit: $kgCO_2eq$ per product
+The emissions involved in producing 1 item of various products
+
+Unit: $\frac{kgCO_2eq}{item}$
 
 **Sources Clothing**:
 - https://www.ademe.fr/sites/default/files/assets/documents/poids_carbone-biens-equipement-201809-rapport.pdf
@@ -210,9 +221,11 @@ purchase_data = read_json("data/carbon_footprint/purchase.json")
 
 # ╔═╡ cd98af32-4d4b-11eb-2ffb-edbe9a3c069b
 md"""
-### 6. Transport
+### 5. Transportation
 
-Unit: $kgCO_2eq/m$
+The emissions per meter travelled in various vehicles
+
+Unit: $\frac{kgCO_2eq}{m}$
 
 **Sources**:
 - https://static.ducky.eco/calculator_documentation.pdf
@@ -221,13 +234,49 @@ Unit: $kgCO_2eq/m$
 # ╔═╡ 04b51758-52b7-11eb-10f9-f5be66cf0dec
 transport_data = read_json("data/carbon_footprint/transport.json")
 
+# ╔═╡ 66d55490-7f7c-11eb-2d2d-77f9b4f7b184
+md"""---"""
+
 # ╔═╡ 0442fbb8-52c0-11eb-06ea-01e68e330d5d
 md"""
-# Carbon footprint Dashboard
+## Carbon footprint Dashboard
 """
 
 # ╔═╡ 5fbcb6e6-52ca-11eb-3e8c-1bb7495dc15d
-md"""## Add your daily emissions here"""
+md"""### Add your daily emissions here"""
+
+# ╔═╡ 1b612ec2-52c1-11eb-22aa-3b406bd64623
+md"""
+Transport type
+$(@bind transport_select Select([k => k for (k, v) in transport_data]))
+
+Transport distance in km
+$(@bind transport_distance Slider(2:1000, default=10, show_value=true))
+
+Food type
+$(@bind food_select Select([k => k for (k, v) in food_data]))
+
+Food amount in grams
+$(@bind food_amount Slider(20:500, default=10, show_value=true))
+
+Streaming type
+$(@bind streaming_select Select(["HDVideo" => "Video HD",
+			"fullHDVideo" => "Video - FullHD/1080p",
+			"ultraHDVideo" => "Video - UltraHD/4K",
+			"audioMP3" => "Audio - MP3"]))
+
+Duration in minutes
+$(@bind streaming_amount Slider(15:600, default=60, show_value=true))
+
+Electricty location
+$(@bind electricity_select Select([k => k for (k, v) in electricity_data]))
+
+Electricity amount in kWh
+$(@bind electricity_amount Slider(1:1000, default=10, show_value=true))
+
+Recent purchases
+$(@bind purchase_select MultiSelect([k => k for (k, v) in purchase_data]))
+"""
 
 # ╔═╡ f5225d7a-5846-11eb-1497-c5d439899e6b
 begin
@@ -308,8 +357,58 @@ begin
 	end
 end
 
+# ╔═╡ 9388aa8a-52c9-11eb-0dd8-3184bcfb93b2
+begin
+	emissions_data = emission_calculator(
+			transport_select,
+			transport_distance,
+			food_select,
+			food_amount,
+			streaming_select,
+			streaming_amount,
+			electricity_select,
+			electricity_amount,
+			purchase_select,
+	)
+	transport_emissions = emissions_data["transport"]
+	food_emissions =  emissions_data["food"]
+	streaming_emissions =  emissions_data["streaming"]
+	electricity_emissions =  emissions_data["electricity"]
+	purchase_emissions = emissions_data["purchase"]
+	total_emissions = emissions_data["total"]
+	"Emissions calculation code"
+end
+
+# ╔═╡ 0a38c120-52c6-11eb-2ec5-e7780b3e11ec
+md"""
+### Your carbon footprint:
+
+1. Transport emissions = $(@sprintf("%.3f", transport_emissions)) kgCO2eq
+
+2. Food emissions = $(@sprintf("%.3f", food_emissions)) kgCO2eq
+
+3. Streaming emissions = $(@sprintf("%.3f", streaming_emissions)) kgCO2eq
+
+4. Electricity emissions = $(@sprintf("%.3f", electricity_emissions)) kgCO2eq
+
+5. Purchase emissions = $(@sprintf("%.3f", purchase_emissions)) kgCO2eq
+
+**Total emissions** = $(@sprintf("%.3f", total_emissions)) kgCO2eq
+
+"""
+
+# ╔═╡ 2b0d264c-7f7f-11eb-2bf6-1119de8bbe96
+md"""
+Add pie chart here ...
+"""
+
 # ╔═╡ ec388b4a-52ca-11eb-097d-6760de18dd0e
 md"""---"""
+
+# ╔═╡ 34baf426-7f7f-11eb-0cf0-bb0d1a7c28fd
+md"""
+## Carbon footprint simulations for example lifestyles
+"""
 
 # ╔═╡ 672fef94-6351-11eb-0af1-652d5992e129
 Random.seed!(1234);
@@ -381,79 +480,6 @@ begin
     end
 end
 
-# ╔═╡ 1b612ec2-52c1-11eb-22aa-3b406bd64623
-md"""
-Transport type
-$(@bind transport_select Select([k => k for (k, v) in transport_data]))
-
-Transport distance in km
-$(@bind transport_distance Slider(2:1000, default=10, show_value=true))
-
-Food type
-$(@bind food_select Select([k => k for (k, v) in food_data]))
-
-Food amount in grams
-$(@bind food_amount Slider(20:500, default=10, show_value=true))
-
-Streaming type
-$(@bind streaming_select Select(["HDVideo" => "Video HD",
-			"fullHDVideo" => "Video - FullHD/1080p",
-			"ultraHDVideo" => "Video - UltraHD/4K",
-			"audioMP3" => "Audio - MP3"]))
-
-Duration in minutes
-$(@bind streaming_amount Slider(15:600, default=60, show_value=true))
-
-Electricty location
-$(@bind electricity_select Select([k => k for (k, v) in electricity_data]))
-
-Electricity amount in kWh
-$(@bind electricity_amount Slider(1:1000, default=10, show_value=true))
-
-Recent purchases
-$(@bind purchase_select MultiSelect([k => k for (k, v) in purchase_data]))
-"""
-
-# ╔═╡ 9388aa8a-52c9-11eb-0dd8-3184bcfb93b2
-begin
-	emissions_data = emission_calculator(
-			transport_select,
-			transport_distance,
-			food_select,
-			food_amount,
-			streaming_select,
-			streaming_amount,
-			electricity_select,
-			electricity_amount,
-			purchase_select,
-	)
-	transport_emissions = emissions_data["transport"]
-	food_emissions =  emissions_data["food"]
-	streaming_emissions =  emissions_data["streaming"]
-	electricity_emissions =  emissions_data["electricity"]
-	purchase_emissions = emissions_data["purchase"]
-	total_emissions = emissions_data["total"]
-	"Emissions calculation code"
-end
-
-# ╔═╡ 0a38c120-52c6-11eb-2ec5-e7780b3e11ec
-md"""
-## Your carbon footprint:
-
-1. Transport emissions = $(@sprintf("%.3f", transport_emissions)) kgCO2eq
-
-2. Food emissions = $(@sprintf("%.3f", food_emissions)) kgCO2eq
-
-3. Streaming emissions = $(@sprintf("%.3f", streaming_emissions * 1000)) gCO2eq
-
-4. Electricity emissions = $(@sprintf("%.3f", electricity_emissions)) kgCO2eq
-
-5. Purchase emissions = $(@sprintf("%.3f", purchase_emissions)) kgCO2eq
-
-**Total emissions** = $(@sprintf("%.3f", total_emissions)) kgCO2eq
-
-"""
-
 # ╔═╡ 521ebdb6-68c5-11eb-3bb2-8926b33ec780
 vegan = Person(
 	["carSharing", "electricVehicle"],
@@ -488,11 +514,11 @@ meat_lover = Person(
 # ╔═╡ 8212a216-73cf-11eb-19e6-cd8e66777289
 daily_emissions(meat_lover)
 
-# ╔═╡ 3f0df1ac-7e81-11eb-3f5e-efbe2314b825
-md"""---"""
-
-# ╔═╡ 14743ea4-52c1-11eb-0cb4-8d3523a8f5ef
-md"""---"""
+# ╔═╡ dbccd432-7f7f-11eb-3d5d-894467220cba
+md"""
+Grouped bar plot
+Stacked group bar plot
+"""
 
 # ╔═╡ Cell order:
 # ╟─8ae7009a-73c4-11eb-0374-25c172bd827e
@@ -505,33 +531,36 @@ md"""---"""
 # ╟─0fcd983e-52b7-11eb-2c1f-13d00c8b4c43
 # ╟─1fc15990-4d41-11eb-0f5f-c309cf01fdfa
 # ╟─329e738a-52ba-11eb-22dd-fbfe2de89bb1
+# ╟─e8574808-4d49-11eb-3515-2d66aadee9f2
+# ╟─83af9228-6353-11eb-0e5b-4550ac55ca4f
 # ╟─fb596dc6-4d41-11eb-1dbd-6707e4fa7778
 # ╠═227d45a0-4d45-11eb-0cca-af99bc390097
 # ╟─d4764dc0-7e81-11eb-29da-adbfa04c613b
 # ╠═cfd60bf8-4d43-11eb-00b7-bd162061b954
-# ╟─e8574808-4d49-11eb-3515-2d66aadee9f2
-# ╟─83af9228-6353-11eb-0e5b-4550ac55ca4f
-# ╟─5e3ae372-4d4a-11eb-3e76-e7b1545f3759
+# ╟─c25bfd94-7f7e-11eb-32ff-6fb869cd3b43
+# ╠═5e3ae372-4d4a-11eb-3e76-e7b1545f3759
 # ╟─cccb00f0-4d46-11eb-027b-ab6e07ce3ce5
-# ╠═42eb4b3e-52ba-11eb-2178-11e1d2a887af
+# ╟─42eb4b3e-52ba-11eb-2178-11e1d2a887af
 # ╟─cd98af32-4d4b-11eb-2ffb-edbe9a3c069b
 # ╟─04b51758-52b7-11eb-10f9-f5be66cf0dec
+# ╟─66d55490-7f7c-11eb-2d2d-77f9b4f7b184
 # ╟─0442fbb8-52c0-11eb-06ea-01e68e330d5d
 # ╠═3b2050da-52c1-11eb-3b89-1d5b6eb2cf40
 # ╟─5fbcb6e6-52ca-11eb-3e8c-1bb7495dc15d
+# ╟─1b612ec2-52c1-11eb-22aa-3b406bd64623
 # ╟─f5225d7a-5846-11eb-1497-c5d439899e6b
 # ╟─8aa42c6e-6354-11eb-3c43-cb16327595c2
 # ╟─9388aa8a-52c9-11eb-0dd8-3184bcfb93b2
 # ╟─0a38c120-52c6-11eb-2ec5-e7780b3e11ec
+# ╟─2b0d264c-7f7f-11eb-2bf6-1119de8bbe96
 # ╟─ec388b4a-52ca-11eb-097d-6760de18dd0e
-# ╟─49f027da-5dce-11eb-3fff-0fd590112019
-# ╟─672fef94-6351-11eb-0af1-652d5992e129
-# ╟─49571046-68c2-11eb-071e-2709f8e40e48
+# ╟─34baf426-7f7f-11eb-0cf0-bb0d1a7c28fd
+# ╠═49f027da-5dce-11eb-3fff-0fd590112019
+# ╠═672fef94-6351-11eb-0af1-652d5992e129
+# ╠═49571046-68c2-11eb-071e-2709f8e40e48
 # ╟─2c63765e-68c3-11eb-317c-d1603846ca9c
-# ╟─1b612ec2-52c1-11eb-22aa-3b406bd64623
-# ╟─521ebdb6-68c5-11eb-3bb2-8926b33ec780
+# ╠═521ebdb6-68c5-11eb-3bb2-8926b33ec780
 # ╠═4a052eb0-68cc-11eb-3cac-b74bcc789672
 # ╟─e370ae32-73ce-11eb-3865-8dec09d2fe6f
 # ╠═8212a216-73cf-11eb-19e6-cd8e66777289
-# ╟─3f0df1ac-7e81-11eb-3f5e-efbe2314b825
-# ╟─14743ea4-52c1-11eb-0cb4-8d3523a8f5ef
+# ╠═dbccd432-7f7f-11eb-3d5d-894467220cba
