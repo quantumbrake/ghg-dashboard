@@ -99,26 +99,18 @@ The numbers above are sufficient to understand the global warming impact of burn
 
 "
 
-# ╔═╡ 0e807710-636c-11eb-25aa-470687ff7834
+# ╔═╡ d6b15000-7f83-11eb-1fca-478cddbecf54
 begin
-	# gr(size=(2500,3000))
-	boxplot([log10.(co2_amt), log10.(ch4_amt), log10.(n2o_amt)], 
-		label=["Carbon Dioxide" "Methane" "Nitrous Oxide"], width=2,
-	xlabel="Gases", ylabel="Log10(GHG emission) (g/kg residue)",
-	title="Distribution of GHG emission/kg residue burnt", legend=false,
-	xticks=([1 2 3], ["Carbon Dioxide" "Methane" "Nitrous Oxide"]))
+	density([log10.(co2_amt), log10.(ch4_amt), log10.(n2o_amt)], label=["Carbon Dioxide" "Methane" "Nitrous Oxide"], width=2, ylabel="Density", xlabel="Log10(GHG emission) (g/kg residue)", title="Distribution of GHG emission/kg residue burnt", fill=true, legend=:topleft, alpha=0.5)
 end
 
 # ╔═╡ f4406d20-586b-11eb-0d35-51da6f73592e
 md"Since the Y axis is on the log scale, we observe that $CO_2$ emission is $\approx$2 orders of magnitude greater than $CH_4$ emission, which is an order greater than $N_2O$ emission. While these are simply the amounts, the impact on global warming is better reflected by the chart below."
 
-# ╔═╡ 84569b40-586d-11eb-2e39-8bda6366221b
+# ╔═╡ 55efed92-7f84-11eb-0c2e-cd38094e461d
 begin
 	# gr(size=(2500,3000))
-	boxplot([log10.(co2_amt), log10.(ch4_co2eq), log10.(n2o_co2eq), log10.(co2eq)], width=2,
-	xlabel="Gases", ylabel="Log10(CO2eq) (g/kg residue)",
-	title="Distribution of GHG emission gCO2eq/kg residue burnt", legend=false,
-	xticks=([1 2 3 4], ["Carbon Dioxide" "Methane" "Nitrous Oxide" "Total"]))
+	density([log10.(co2_amt), log10.(ch4_co2eq), log10.(n2o_co2eq), log10.(co2eq)], width=2, ylabel="Density", xlabel="Log10(CO2eq) (g/kg residue)", title="Distribution of GHG emission gCO2eq/kg residue burnt", legend=:topleft, fill=true, alpha=0.5, label=["Carbon Dioxide" "Methane" "Nitrous Oxide" "Total"])
 end
 
 # ╔═╡ 925ff0a0-586e-11eb-24c5-3be428cb076f
@@ -157,6 +149,18 @@ begin
 	xlabel="Cases", ylabel="CO2eq (Gg or million kg)",
 	title="Distribution of gCO2eq from crop residue burning", legend=false,
 	xticks=([1 2 3 4 5 6], ["1 - CO2 only", "1 - Total","2 - CO2 only", "2 - Total","3 - CO2 only", "3 - Total"]))
+end
+
+# ╔═╡ 5d555990-7f83-11eb-0420-c740833b22d9
+md"Todo : see how to overlay"
+
+# ╔═╡ 4dd05620-7f81-11eb-103e-fda7660161ac
+begin
+	# gr(size=(2500,3000))
+	violin([total_co2, total_co2eq])
+	dotplot!([total_co2, total_co2eq], width=2,
+	xlabel="Cases", ylabel="CO2eq (Gg or million kg)",
+	title="Distribution of gCO2eq from crop residue burning", legend=false)
 end
 
 # ╔═╡ 7f753680-5878-11eb-3c3c-d772aa51e7e7
@@ -211,11 +215,13 @@ md"
 # ╠═e4abc46e-52e6-11eb-19e0-19a94e1257c6
 # ╟─e986fbd0-4d42-11eb-3342-ff3bb8eff1ad
 # ╟─8aa500ee-52e5-11eb-034e-15d346c9433e
-# ╟─0e807710-636c-11eb-25aa-470687ff7834
+# ╠═d6b15000-7f83-11eb-1fca-478cddbecf54
 # ╟─f4406d20-586b-11eb-0d35-51da6f73592e
-# ╟─84569b40-586d-11eb-2e39-8bda6366221b
+# ╠═55efed92-7f84-11eb-0c2e-cd38094e461d
 # ╟─925ff0a0-586e-11eb-24c5-3be428cb076f
-# ╟─82c338c0-5867-11eb-02f4-4d0f92a4081d
+# ╠═82c338c0-5867-11eb-02f4-4d0f92a4081d
+# ╠═5d555990-7f83-11eb-0420-c740833b22d9
+# ╠═4dd05620-7f81-11eb-103e-fda7660161ac
 # ╟─7f753680-5878-11eb-3c3c-d772aa51e7e7
 # ╟─701820f0-52e5-11eb-1cff-195defc1e22a
 # ╟─8685b4b0-52e5-11eb-1414-bfb2439d473c
