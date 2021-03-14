@@ -14,10 +14,10 @@ macro bind(def, element)
 end
 
 # ╔═╡ 3b2050da-52c1-11eb-3b89-1d5b6eb2cf40
-using PlutoUI, Printf
+using PlutoUI, Printf, Plots, StatsPlots
 
 # ╔═╡ 49f027da-5dce-11eb-3fff-0fd590112019
-using Distributions, Random
+using DataFrames, Distributions, Random
 
 # ╔═╡ 8ae7009a-73c4-11eb-0374-25c172bd827e
 md"""
@@ -145,7 +145,7 @@ end
 
 # ╔═╡ d4764dc0-7e81-11eb-29da-adbfa04c613b
 md"""
-We create a function to calculate the GHG emissions involved in transmitting `dataweight` (in bits) amount of data for a `duration` (in seconds) in a country with electricity emissions equal to `electricity_intensity` (in Joules)
+We create a function to calculate the GHG emissions involved in transmitting `dataweight` (in bits) amount of data for a `duration` (in seconds) in a country with electricity emissions equal to `electricity_intensity` (in $kgCO_2eq.J^{-1}$)
 """
 
 # ╔═╡ cfd60bf8-4d43-11eb-00b7-bd162061b954
@@ -168,30 +168,28 @@ end
 
 # ╔═╡ c25bfd94-7f7e-11eb-32ff-6fb869cd3b43
 md"""
-Update ...
+Next, we create a function to calculate carbon emissions created while streaming a particular type of content (`stream_type`) for `duration` (in seconds) in a country with electricity emissions equal to `electricity_intensity` (in $kgCO_2eq.J^{-1}$)
 """
 
 # ╔═╡ 5e3ae372-4d4a-11eb-3e76-e7b1545f3759
-begin
-	function streaming_carbonimpact(
-			stream_type::String,
-			duration::Float64,
-			electricity_intensity::Float64
-		)::Float64
-		factor = Dict(
-			"HDVideo" => (1.21 * (10 ^ 9) * 8) / ((2 * 60 + 22) * 60),
-			"fullHDVideo" => (7.02* (10 ^ 9) * 8) / ((2 * 60 + 22) * 60),
-			"ultraHDVideo" => (35.73 * (10 ^ 9) * 8) / ((2 * 60 + 22) * 60),
-			"audioMP3" => (3.8 * (10 ^ 6) * 8) / 154
-		)
-		data_weight = get(factor, stream_type, 0.0)
-		total_carbonimpact = internet_carbonimpact(
-			duration,
-			data_weight,
-			electricity_intensity
-		)
-		return total_carbonimpact
-	end
+function streaming_carbonimpact(
+		stream_type::String,
+		duration::Float64,
+		electricity_intensity::Float64
+	)::Float64
+	factor = Dict(
+		"HDVideo" => (1.21 * (10 ^ 9) * 8) / ((2 * 60 + 22) * 60),
+		"fullHDVideo" => (7.02* (10 ^ 9) * 8) / ((2 * 60 + 22) * 60),
+		"ultraHDVideo" => (35.73 * (10 ^ 9) * 8) / ((2 * 60 + 22) * 60),
+		"audioMP3" => (3.8 * (10 ^ 6) * 8) / 154
+	)
+	data_weight = get(factor, stream_type, 0.0)
+	total_carbonimpact = internet_carbonimpact(
+		duration,
+		data_weight,
+		electricity_intensity
+	)
+	return total_carbonimpact
 end
 
 # ╔═╡ cccb00f0-4d46-11eb-027b-ab6e07ce3ce5
@@ -242,22 +240,32 @@ md"""
 ## Carbon footprint Dashboard
 """
 
+# ╔═╡ 52ee864c-8445-11eb-15b0-47a0f97b6fec
+plotly()
+
 # ╔═╡ 5fbcb6e6-52ca-11eb-3e8c-1bb7495dc15d
 md"""### Add your daily emissions here"""
 
 # ╔═╡ 1b612ec2-52c1-11eb-22aa-3b406bd64623
 md"""
-Transport type
-$(@bind transport_select Select([k => k for (k, v) in transport_data]))
+#### Electricity:
 
-Transport distance in km
-$(@bind transport_distance Slider(2:1000, default=10, show_value=true))
+Electricty location
+$(@bind electricity_select Select([k => k for (k, v) in electricity_data]))
+
+Electricity amount (in kWh)
+$(@bind electricity_amount Slider(1:1000, default=10, show_value=true))
+
+#### Food:
 
 Food type
 $(@bind food_select Select([k => k for (k, v) in food_data]))
 
-Food amount in grams
-$(@bind food_amount Slider(20:500, default=10, show_value=true))
+Food amount (in grams)
+$(@bind food_amount Slider(5:500, default=10, show_value=true))
+
+
+#### Streaming:
 
 Streaming type
 $(@bind streaming_select Select(["HDVideo" => "Video HD",
@@ -265,96 +273,96 @@ $(@bind streaming_select Select(["HDVideo" => "Video HD",
 			"ultraHDVideo" => "Video - UltraHD/4K",
 			"audioMP3" => "Audio - MP3"]))
 
-Duration in minutes
-$(@bind streaming_amount Slider(15:600, default=60, show_value=true))
+Duration (in minutes)
+$(@bind streaming_amount Slider(10:600, default=60, show_value=true))
 
-Electricty location
-$(@bind electricity_select Select([k => k for (k, v) in electricity_data]))
-
-Electricity amount in kWh
-$(@bind electricity_amount Slider(1:1000, default=10, show_value=true))
+#### Purchases:
 
 Recent purchases
 $(@bind purchase_select MultiSelect([k => k for (k, v) in purchase_data]))
+
+#### Transport:
+
+Transport type
+$(@bind transport_select Select([k => k for (k, v) in transport_data]))
+
+Transport distance (in km)
+$(@bind transport_distance Slider(1:1000, default=10, show_value=true))
 """
 
 # ╔═╡ f5225d7a-5846-11eb-1497-c5d439899e6b
-begin
-	function emission_calculator(
-			transport_select::String,
-			transport_distance::Integer,
-			food_select::String,
-			food_amount::Integer,
-			streaming_select::String,
-			streaming_amount::Integer,
-			electricity_select::String,
-			electricity_amount::Integer,
-			purchase_select::Array,
-	)::Dict
-		transport_emissions = transport_data[transport_select] * transport_distance * 1000
-		food_emissions = food_data[food_select] * food_amount / 1000
-		streaming_emissions = streaming_carbonimpact(streaming_select,streaming_amount * 60.0,electricity_data["world"])
-		electricity_emissions = electricity_data_pw[electricity_select] * electricity_amount
-		if isempty(purchase_select)
-			purchase_emissions = 0.0
-		else
-			purchase_emissions = sum([purchase_data[purchase] for purchase in purchase_select])
-		end
-		total_emissions = (transport_emissions + food_emissions + streaming_emissions + electricity_emissions + purchase_emissions)
-		data = Dict(
-			"transport" => transport_emissions,
-			"food" => food_emissions,
-			"streaming" => streaming_emissions,
-			"electricity" => electricity_emissions,
-			"purchase" => purchase_emissions,
-			"total" => total_emissions,
-			)
-		return data
+function emission_calculator(
+		transport_select::String,
+		transport_distance::Integer,
+		food_select::String,
+		food_amount::Integer,
+		streaming_select::String,
+		streaming_amount::Integer,
+		electricity_select::String,
+		electricity_amount::Integer,
+		purchase_select::Array,
+)::Dict
+	transport_emissions = transport_data[transport_select] * transport_distance * 1000
+	food_emissions = food_data[food_select] * food_amount / 1000
+	streaming_emissions = streaming_carbonimpact(streaming_select,streaming_amount * 60.0,electricity_data["world"])
+	electricity_emissions = electricity_data_pw[electricity_select] * electricity_amount
+	if isempty(purchase_select)
+		purchase_emissions = 0.0
+	else
+		purchase_emissions = sum([purchase_data[purchase] for purchase in purchase_select])
 	end
+	total_emissions = (transport_emissions + food_emissions + streaming_emissions + electricity_emissions + purchase_emissions)
+	data = Dict(
+		"transport" => transport_emissions,
+		"food" => food_emissions,
+		"streaming" => streaming_emissions,
+		"electricity" => electricity_emissions,
+		"purchase" => purchase_emissions,
+		"total" => total_emissions,
+		)
+	return data
 end
 
 # ╔═╡ 8aa42c6e-6354-11eb-3c43-cb16327595c2
-begin
-	function emission_calculator(
-			transport_select::Array{String,1},
-			transport_distance::Array{Int64,1},
-			food_select::Array{String,1},
-			food_amount::Array{Int64,1},
-			streaming_select::Array{String,1},
-			streaming_amount::Array{Int64,1},
-			electricity_select::String,
-			electricity_amount::Int64,
-			purchase_select::Array{String, 1},
-			purchase_amount::Array{Int64, 1},
-	)::Dict
-		transport_emissions = 0
-		for (i, j) in zip(transport_select, transport_distance)
-			transport_emissions += transport_data[i] * j * 1000
-		end
-		food_emissions = 0
-		for (i, j) in zip(food_select, food_amount)
-			food_emissions += food_data[i] * j / 1000
-		end
-		streaming_emissions = 0
-		for (i, j) in zip(streaming_select, streaming_amount)
-			streaming_emissions += streaming_carbonimpact(i, j * 60.0,electricity_data["world"])
-		end
-		electricity_emissions = electricity_data_pw[electricity_select] * electricity_amount
-		purchase_emissions = 0.0
-		for (i, j) in zip(purchase_select, purchase_amount)
-			purchase_emissions += purchase_data[i] * j
-		end
-		total_emissions = (transport_emissions + food_emissions + streaming_emissions + electricity_emissions + purchase_emissions)
-		data = Dict(
-			"transport" => transport_emissions,
-			"food" => food_emissions,
-			"streaming" => streaming_emissions,
-			"electricity" => electricity_emissions,
-			"purchase" => purchase_emissions,
-			"total" => total_emissions,
-			)
-		return data
+function emission_calculator(
+		transport_select::Array{String,1},
+		transport_distance::Array{Int64,1},
+		food_select::Array{String,1},
+		food_amount::Array{Int64,1},
+		streaming_select::Array{String,1},
+		streaming_amount::Array{Int64,1},
+		electricity_select::String,
+		electricity_amount::Int64,
+		purchase_select::Array{String, 1},
+		purchase_amount::Array{Int64, 1},
+)::Dict
+	transport_emissions = 0
+	for (i, j) in zip(transport_select, transport_distance)
+		transport_emissions += transport_data[i] * j * 1000
 	end
+	food_emissions = 0
+	for (i, j) in zip(food_select, food_amount)
+		food_emissions += food_data[i] * j / 1000
+	end
+	streaming_emissions = 0
+	for (i, j) in zip(streaming_select, streaming_amount)
+		streaming_emissions += streaming_carbonimpact(i, j * 60.0,electricity_data["world"])
+	end
+	electricity_emissions = electricity_data_pw[electricity_select] * electricity_amount
+	purchase_emissions = 0.0
+	for (i, j) in zip(purchase_select, purchase_amount)
+		purchase_emissions += purchase_data[i] * j
+	end
+	total_emissions = (transport_emissions + food_emissions + streaming_emissions + electricity_emissions + purchase_emissions)
+	data = Dict(
+		"transport" => transport_emissions,
+		"food" => food_emissions,
+		"streaming" => streaming_emissions,
+		"electricity" => electricity_emissions,
+		"purchase" => purchase_emissions,
+		"total" => total_emissions,
+		)
+	return data
 end
 
 # ╔═╡ 9388aa8a-52c9-11eb-0dd8-3184bcfb93b2
@@ -379,27 +387,26 @@ begin
 	"Emissions calculation code"
 end
 
+# ╔═╡ 2b0d264c-7f7f-11eb-2bf6-1119de8bbe96
+begin
+	x = ["Electricity", "Food", "Streaming", "Purchases", "Transport"]
+	y = [electricity_emissions, food_emissions, streaming_emissions, purchase_emissions, transport_emissions]
+	pie(x, y, title="Emissions breakdown (Total = $(@sprintf("%.2f", total_emissions)) kgCO2eq)", legend=:right)
+end
+
 # ╔═╡ 0a38c120-52c6-11eb-2ec5-e7780b3e11ec
 md"""
 ### Your carbon footprint:
 
-1. Transport emissions = $(@sprintf("%.3f", transport_emissions)) kgCO2eq
+| Emission source | kgCO2eq |
+| --- | --- |
+| Electricity | $(@sprintf("%.3f", electricity_emissions)) |
+| Food | $(@sprintf("%.3f", food_emissions)) |
+| Streaming | $(@sprintf("%.3f", streaming_emissions)) |
+| Purchase | $(@sprintf("%.3f", purchase_emissions)) |
+| Transport | $(@sprintf("%.3f", transport_emissions))  |
+| **Total emissions** | **$(@sprintf("%.3f", total_emissions))** |
 
-2. Food emissions = $(@sprintf("%.3f", food_emissions)) kgCO2eq
-
-3. Streaming emissions = $(@sprintf("%.3f", streaming_emissions)) kgCO2eq
-
-4. Electricity emissions = $(@sprintf("%.3f", electricity_emissions)) kgCO2eq
-
-5. Purchase emissions = $(@sprintf("%.3f", purchase_emissions)) kgCO2eq
-
-**Total emissions** = $(@sprintf("%.3f", total_emissions)) kgCO2eq
-
-"""
-
-# ╔═╡ 2b0d264c-7f7f-11eb-2bf6-1119de8bbe96
-md"""
-Add pie chart here ...
 """
 
 # ╔═╡ ec388b4a-52ca-11eb-097d-6760de18dd0e
@@ -407,11 +414,25 @@ md"""---"""
 
 # ╔═╡ 34baf426-7f7f-11eb-0cf0-bb0d1a7c28fd
 md"""
-## Carbon footprint simulations for example lifestyles
+## Carbon footprint simulations for different lifestyles
 """
 
 # ╔═╡ 672fef94-6351-11eb-0af1-652d5992e129
 Random.seed!(1234);
+
+# ╔═╡ 18787dee-8446-11eb-2b9d-9967d7fe6d5c
+md"""
+A "Person" `struct` that stores information about a person's daily behavior:
+1. Vehicles owned and their usage distribution
+2. Food consumed and their consumption
+3. Content streamed and their amount
+4. Country of residence
+5. Commonly purchased object and their purchase rate
+
+>NOTE:
+>We assume that the distributions for each emission type are applicable to all objects or items of that type.
+>Eg: If `foods` are "tofu" and "beans" and the provided `food_consumption` distribution is $\text{Truncated}(\mathcal{N}(150, 50), 0, 600)$, we assume that each food item follows that distribution.
+"""
 
 # ╔═╡ 49571046-68c2-11eb-071e-2709f8e40e48
 struct Person
@@ -427,97 +448,155 @@ struct Person
 	purchase_rate::DiscreteUnivariateDistribution
 end
 
+# ╔═╡ e0ad3a7e-8447-11eb-2df2-3d52fffaab6b
+md"""
+We create function to calculate the daily emissions of a `Person`
+"""
+
 # ╔═╡ 2c63765e-68c3-11eb-317c-d1603846ca9c
-begin
-    function daily_emissions(person::Person)::Dict
-        transport_distances = floor.(
-			Int,
-			rand(
-				person.transport_distribution,
-				length(person.vehicles)
-			)
+function daily_emissions(person::Person)::Dict
+	transport_distances = floor.(
+		Int,
+		rand(
+			person.transport_distribution,
+			length(person.vehicles)
 		)
-        food_amounts = floor.(
-			Int,
-			rand(
-				person.food_consumption,
-				length(person.foods)
-			)
+	)
+	food_amounts = floor.(
+		Int,
+		rand(
+			person.food_consumption,
+			length(person.foods)
 		)
-        stream_amounts = floor.(
-			Int,
-			rand(
-				person.streaming_distribution,
-				length(person.streams)
-			)
+	)
+	stream_amounts = floor.(
+		Int,
+		rand(
+			person.streaming_distribution,
+			length(person.streams)
 		)
-        electricity_amounts = floor.(
-			Int,
-			rand(
-				person.electricity_usage,
-			)
+	)
+	electricity_amounts = floor.(
+		Int,
+		rand(
+			person.electricity_usage,
 		)
-        purchase_amounts = floor.(
-			Int,
-			rand(
-				person.purchase_rate,
-				length(person.purchases)
-			)
+	)
+	purchase_amounts = floor.(
+		Int,
+		rand(
+			person.purchase_rate,
+			length(person.purchases)
 		)
-		result = emission_calculator(
-		person.vehicles,
-		transport_distances,
-		person.foods,
-		food_amounts,
-		person.streams,
-		stream_amounts,
-		person.country,
-		electricity_amounts,
-		person.purchases,
-		purchase_amounts,
-		)
-		return result
-    end
+	)
+	result = emission_calculator(
+	person.vehicles,
+	transport_distances,
+	person.foods,
+	food_amounts,
+	person.streams,
+	stream_amounts,
+	person.country,
+	electricity_amounts,
+	person.purchases,
+	purchase_amounts,
+	)
+	return result
 end
 
-# ╔═╡ 521ebdb6-68c5-11eb-3bb2-8926b33ec780
-vegan = Person(
-	["carSharing", "electricVehicle"],
-	truncated(Normal(80, 20), 0, 1000),
-	["fruit", "tofu", "beans", "vegetables"],
-	truncated(Normal(200, 50), 0, 500),
+# ╔═╡ 7bb8f0e4-8448-11eb-2bd5-e9f94078860e
+function yearly_emissions(person::Person)::DataFrame
+	df = DataFrame(daily_emissions(person))
+	for i in range(2, stop=365)
+		push!(df, daily_emissions(person))
+	end
+	return df
+end
+
+# ╔═╡ 04badb38-8448-11eb-2750-fde9b58547e4
+md"""
+### Case Study 1: Switching from a meat rich diet to a vegan diet
+
+Let us consider the case where a person following a meat rich diet considers switching to a vegan diet and the impact it would have on their carbon footprint
+"""
+
+# ╔═╡ 5114761e-84d0-11eb-094e-fde0d465d19e
+md"""
+We create a `Person` who eats a diet rich in meat and animal derived products (`person_meat`) and a `Person` who follows a vegan diet (`person_vegan`). The only differences between these two is in the food items and their consumption.
+"""
+
+# ╔═╡ f9d0182e-8450-11eb-3f42-3df1cf54cf96
+person_meat = Person(
+	["car"],
+	truncated(Normal(50, 5), 0, 1000),
+	["pork", "chicken", "milk", "eggs", "rice"],
+	truncated(Normal(120, 20), 0, 500),
 	["ultraHDVideo"],
-	truncated(Normal(150, 50), 0, 600),  # 240 mins is US average
+	truncated(Normal(240, 50), 0, 600),  # 240 mins is US average
 	"usa",
-	truncated(Normal(20, 5), 0, 200),  # 30 kwh is US average
+	truncated(Normal(30, 5), 0, 200),  # 30 kwh is US average
 	["jeans", "shirt", "shoes"],
 	Poisson(0.001)
 )
 
-# ╔═╡ 4a052eb0-68cc-11eb-3cac-b74bcc789672
-reduce((x, y) -> merge(+, x, y), [daily_emissions(vegan) for i in range(1, stop=365)])  # wrong
-
-# ╔═╡ e370ae32-73ce-11eb-3865-8dec09d2fe6f
-meat_lover = Person(
-	["fossilFueledCar", "bus"],
-	truncated(Normal(80, 20), 0, 1000),
-	["coffee", "beef", "pork", "cheese"],
-	truncated(Normal(200, 50), 0, 500),
-	["ultraHDVideo", "fullHDVideo"],
-	truncated(Normal(200, 50), 0, 600),  # 240 mins is US average
+# ╔═╡ 521ebdb6-68c5-11eb-3bb2-8926b33ec780
+person_vegan = Person(
+	["car"],
+	truncated(Normal(50, 5), 0, 1000),
+	["fruit", "tofu", "beans", "vegetables", "rice"],
+	truncated(Normal(120, 20), 0, 500),
+	["ultraHDVideo"],
+	truncated(Normal(240, 50), 0, 600),  # 240 mins is US average
 	"usa",
 	truncated(Normal(30, 5), 0, 200),  # 30 kwh is US average
 	["jeans", "shirt", "shoes"],
-	Poisson(0.01)
+	Poisson(0.001)
 )
 
-# ╔═╡ 8212a216-73cf-11eb-19e6-cd8e66777289
-daily_emissions(meat_lover)
+# ╔═╡ 751bb036-844e-11eb-035b-6d62fe25bfce
+emissions_vegan = yearly_emissions(person_vegan)
+
+# ╔═╡ 2af54294-8451-11eb-29b9-dd400f6ceb74
+emission_meat = yearly_emissions(person_meat)
+
+# ╔═╡ b185179e-8451-11eb-1877-593c6b4be750
+begin
+	emissions_vegan_long = stack(emissions_vegan, [:electricity, :food, :purchase, :streaming, :transport]);
+	emissions_meat_long = stack(emission_meat, [:electricity, :food, :purchase, :streaming, :transport]);
+end;
+
+# ╔═╡ 5b1d34d4-8451-11eb-15b5-1d45b1b3cb01
+begin
+	@df emissions_vegan_long violin(:variable, :value, side=:left, label="vegan diet", linewidth=0)
+	@df emissions_meat_long violin!(:variable, :value, side=:right, label="meat diet", linewidth=0)
+end
+
+# ╔═╡ b7a631d2-8454-11eb-3ff7-5b02d14ce2b9
+begin
+	@df emissions_vegan density(:food, fill=(0, .5, :green), label="vegan diet (food)")
+	@df emission_meat density!(:food, fill=(0, .5, :red), label="meat diet (food)")
+end
+
+# ╔═╡ c760edd0-8452-11eb-318b-9de3fd9409ae
+begin
+	@df emissions_vegan density(:total, fill=(0, .5, :green), label="vegan diet (total)")
+	@df emission_meat density!(:total, fill=(0, .5, :red), label="meat diet (total)")
+end
+
+# ╔═╡ 3ce10e94-8455-11eb-0083-3dea8a3ebc13
+md"""
+Total annual difference ...
+"""
 
 # ╔═╡ dbccd432-7f7f-11eb-3d5d-894467220cba
 md"""
 Grouped bar plot
 Stacked group bar plot
+"""
+
+# ╔═╡ 203006e0-8448-11eb-3b43-ad4d0ba20e88
+md"""
+### Case Study 2: Fossil fueled car vs. Electric car vs. Public transport
 """
 
 # ╔═╡ Cell order:
@@ -546,21 +625,33 @@ Stacked group bar plot
 # ╟─66d55490-7f7c-11eb-2d2d-77f9b4f7b184
 # ╟─0442fbb8-52c0-11eb-06ea-01e68e330d5d
 # ╠═3b2050da-52c1-11eb-3b89-1d5b6eb2cf40
+# ╟─52ee864c-8445-11eb-15b0-47a0f97b6fec
 # ╟─5fbcb6e6-52ca-11eb-3e8c-1bb7495dc15d
 # ╟─1b612ec2-52c1-11eb-22aa-3b406bd64623
+# ╟─2b0d264c-7f7f-11eb-2bf6-1119de8bbe96
+# ╟─0a38c120-52c6-11eb-2ec5-e7780b3e11ec
 # ╟─f5225d7a-5846-11eb-1497-c5d439899e6b
 # ╟─8aa42c6e-6354-11eb-3c43-cb16327595c2
 # ╟─9388aa8a-52c9-11eb-0dd8-3184bcfb93b2
-# ╟─0a38c120-52c6-11eb-2ec5-e7780b3e11ec
-# ╟─2b0d264c-7f7f-11eb-2bf6-1119de8bbe96
 # ╟─ec388b4a-52ca-11eb-097d-6760de18dd0e
 # ╟─34baf426-7f7f-11eb-0cf0-bb0d1a7c28fd
 # ╠═49f027da-5dce-11eb-3fff-0fd590112019
 # ╠═672fef94-6351-11eb-0af1-652d5992e129
+# ╟─18787dee-8446-11eb-2b9d-9967d7fe6d5c
 # ╠═49571046-68c2-11eb-071e-2709f8e40e48
+# ╟─e0ad3a7e-8447-11eb-2df2-3d52fffaab6b
 # ╟─2c63765e-68c3-11eb-317c-d1603846ca9c
+# ╟─7bb8f0e4-8448-11eb-2bd5-e9f94078860e
+# ╟─04badb38-8448-11eb-2750-fde9b58547e4
+# ╟─5114761e-84d0-11eb-094e-fde0d465d19e
+# ╠═f9d0182e-8450-11eb-3f42-3df1cf54cf96
 # ╠═521ebdb6-68c5-11eb-3bb2-8926b33ec780
-# ╠═4a052eb0-68cc-11eb-3cac-b74bcc789672
-# ╟─e370ae32-73ce-11eb-3865-8dec09d2fe6f
-# ╠═8212a216-73cf-11eb-19e6-cd8e66777289
+# ╠═751bb036-844e-11eb-035b-6d62fe25bfce
+# ╠═2af54294-8451-11eb-29b9-dd400f6ceb74
+# ╠═b185179e-8451-11eb-1877-593c6b4be750
+# ╠═5b1d34d4-8451-11eb-15b5-1d45b1b3cb01
+# ╠═b7a631d2-8454-11eb-3ff7-5b02d14ce2b9
+# ╠═c760edd0-8452-11eb-318b-9de3fd9409ae
+# ╠═3ce10e94-8455-11eb-0083-3dea8a3ebc13
 # ╠═dbccd432-7f7f-11eb-3d5d-894467220cba
+# ╠═203006e0-8448-11eb-3b43-ad4d0ba20e88
