@@ -13,6 +13,9 @@ using StatsPlots
 # ╔═╡ e4abc46e-52e6-11eb-19e0-19a94e1257c6
 using Random, Distributions
 
+# ╔═╡ 5cce7220-846c-11eb-0a99-7bed14a9f937
+using DataFrames
+
 # ╔═╡ 8aa500ee-52e5-11eb-034e-15d346c9433e
 begin
 	co2_mean = 1420 # g/kg residue
@@ -55,6 +58,16 @@ begin
 	total_co2eq_2 = co2eq .* residue_amt_2 / 1e3
 	total_co2_3 = co2_amt .* residue_amt_3 / 1e3
 	total_co2eq_3 = co2eq .* residue_amt_3 / 1e3
+	
+	co2_df = DataFrame(Amount = vcat(total_co2, total_co2_2, total_co2_3), 
+	Case = vcat(repeat([1], n_samples),
+		repeat([2], n_samples), repeat([3], n_samples)),
+	Quantity = repeat(["CO2 only"], n_samples * 3));
+	
+	total_df = DataFrame(Amount = vcat(total_co2eq, total_co2eq_2, total_co2eq_3), 
+	Case = vcat(repeat([1], n_samples),
+		repeat([2], n_samples), repeat([3], n_samples)),
+	Quantity = repeat(["Total"], n_samples * 3));
 end;
 
 # ╔═╡ e986fbd0-4d42-11eb-3342-ff3bb8eff1ad
@@ -142,25 +155,11 @@ Computing the impact of these residue amounts is simply multiplying one or more 
 
 "
 
-# ╔═╡ 82c338c0-5867-11eb-02f4-4d0f92a4081d
+# ╔═╡ 745cd7d0-846f-11eb-1cab-e1ec4e7d7fad
 begin
-	# gr(size=(2500,3000))
-	boxplot([total_co2, total_co2eq, total_co2_2, total_co2eq_2, total_co2_3, total_co2eq_3], width=2,
-	xlabel="Cases", ylabel="CO2eq (Gg or million kg)",
-	title="Distribution of gCO2eq from crop residue burning", legend=false,
-	xticks=([1 2 3 4 5 6], ["1 - CO2 only", "1 - Total","2 - CO2 only", "2 - Total","3 - CO2 only", "3 - Total"]))
-end
-
-# ╔═╡ 5d555990-7f83-11eb-0420-c740833b22d9
-md"Todo : see how to overlay"
-
-# ╔═╡ 4dd05620-7f81-11eb-103e-fda7660161ac
-begin
-	# gr(size=(2500,3000))
-	violin([total_co2, total_co2eq])
-	dotplot!([total_co2, total_co2eq], width=2,
-	xlabel="Cases", ylabel="CO2eq (Gg or million kg)",
-	title="Distribution of gCO2eq from crop residue burning", legend=false)
+	@df co2_df violin(:Case, :Amount, group = :Quantity, side=:left, 
+		label="CO2 only", xticks=[1, 2, 3], xlabel="Cases", ylabel="CO2eq (Gg or million kg)", title="Distribution of gCO2eq from crop residue burning")
+	@df total_df violin!(:Case, :Amount, group = :Quantity, side=:right, label="Total")
 end
 
 # ╔═╡ 7f753680-5878-11eb-3c3c-d772aa51e7e7
@@ -213,15 +212,14 @@ md"
 # ╠═81888440-4d42-11eb-1bf5-0f0108717ed6
 # ╠═ee1dacd0-52e6-11eb-3486-0bb6ee49c951
 # ╠═e4abc46e-52e6-11eb-19e0-19a94e1257c6
+# ╠═5cce7220-846c-11eb-0a99-7bed14a9f937
 # ╟─e986fbd0-4d42-11eb-3342-ff3bb8eff1ad
 # ╟─8aa500ee-52e5-11eb-034e-15d346c9433e
-# ╠═d6b15000-7f83-11eb-1fca-478cddbecf54
+# ╟─d6b15000-7f83-11eb-1fca-478cddbecf54
 # ╟─f4406d20-586b-11eb-0d35-51da6f73592e
-# ╠═55efed92-7f84-11eb-0c2e-cd38094e461d
+# ╟─55efed92-7f84-11eb-0c2e-cd38094e461d
 # ╟─925ff0a0-586e-11eb-24c5-3be428cb076f
-# ╠═82c338c0-5867-11eb-02f4-4d0f92a4081d
-# ╠═5d555990-7f83-11eb-0420-c740833b22d9
-# ╠═4dd05620-7f81-11eb-103e-fda7660161ac
+# ╟─745cd7d0-846f-11eb-1cab-e1ec4e7d7fad
 # ╟─7f753680-5878-11eb-3c3c-d772aa51e7e7
 # ╟─701820f0-52e5-11eb-1cff-195defc1e22a
 # ╟─8685b4b0-52e5-11eb-1414-bfb2439d473c
