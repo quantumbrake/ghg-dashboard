@@ -24,6 +24,9 @@ md"""
 # Carbon Footprint
 """
 
+# ╔═╡ ae828cb2-86a8-11eb-2862-6137ecb692a5
+md"""By: Dileep Kishore, Srikiran Chandrasekaran """
+
 # ╔═╡ 94e65102-73c4-11eb-3cb4-81736a39e596
 md"""
 >A carbon footprint is the total greenhouse gas (GHG) emissions caused by an individual, event, organization, service, or product, expressed as carbon dioxide equivalent.  
@@ -645,6 +648,7 @@ Total **annual** difference in emissions would amount to $\approx$ $(@sprintf("%
 
 # ╔═╡ Cell order:
 # ╟─8ae7009a-73c4-11eb-0374-25c172bd827e
+# ╟─ae828cb2-86a8-11eb-2862-6137ecb692a5
 # ╟─94e65102-73c4-11eb-3cb4-81736a39e596
 # ╟─054ae36c-52cb-11eb-25aa-31355bbed6de
 # ╠═b4a152f0-4d4f-11eb-106b-b58e9f1495a9

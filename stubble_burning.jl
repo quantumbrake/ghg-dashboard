@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.12.18
+# v0.12.21
 
 using Markdown
 using InteractiveUtils
@@ -74,6 +74,8 @@ end;
 
 # ╔═╡ e986fbd0-4d42-11eb-3342-ff3bb8eff1ad
 md"# What is the global warming impact of crop stubble burning in Northern India?
+
+By: Srikiran Chandrasekaran, Dileep Kishore
 
 To clear the fields of the residue from the previous rice crop and make way for the subsequent wheat crop, some farmers in Northern India burn what's left in the field. Called crop residue burning or stubble burning, this happens in the months of October and November [1]. Manually clearing the residue, or using machines built for the purpose, may cost more [10].
 
@@ -217,7 +219,7 @@ md"
 # ╠═e4abc46e-52e6-11eb-19e0-19a94e1257c6
 # ╠═5cce7220-846c-11eb-0a99-7bed14a9f937
 # ╟─e986fbd0-4d42-11eb-3342-ff3bb8eff1ad
-# ╠═8aa500ee-52e5-11eb-034e-15d346c9433e
+# ╟─8aa500ee-52e5-11eb-034e-15d346c9433e
 # ╟─d6b15000-7f83-11eb-1fca-478cddbecf54
 # ╟─f4406d20-586b-11eb-0d35-51da6f73592e
 # ╟─55efed92-7f84-11eb-0c2e-cd38094e461d
