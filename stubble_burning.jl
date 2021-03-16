@@ -24,20 +24,22 @@ begin
 	ch4_std = 5.7
 	n2o_mean = 0.09
 	n2o_std = 0.04;
-	ch4_co2_eq_lower = 25; ch4_co2_eq_upper = 28;
+	
+	ch4_co2_eq_lower = 25; ch4_co2_eq_upper = 28; #unitless
 	n2o_co2_eq_lower = 265; n2o_co2_eq_upper = 298;
+	
 	rcr_lower = 1.4; rcr_upper = 1.8; # kg residue / kg rice
-	india_annual_emission = 2.46 * 10^9 * 10^3 / 10^9; # billion tonnes -> Gg conversion
+	billion_tonnes_to_million_tonnes = 10^3;
+	india_annual_emission_billion_tonnes = 2.46;
+	india_annual_emission_million_tonnes = india_annual_emission_billion_tonnes * billion_tonnes_to_million_tonnes;
 	
 	Random.seed!(123)
 	n_samples = 100;
 	
-	co2_amt = rand(truncated(Normal(co2_mean, co2_std), 0, co2_mean * 3), n_samples);
-	
+	co2_amt = rand(truncated(Normal(co2_mean, co2_std), 0, co2_mean * 3), n_samples); # g/kg residue
 	ch4_amt = rand(truncated(Normal(ch4_mean, ch4_std), 0, ch4_mean * 3), n_samples);
 	ch4_co2eq_factor = rand(Uniform(ch4_co2_eq_lower, ch4_co2_eq_upper), n_samples);
 	ch4_co2eq = ch4_amt .* ch4_co2eq_factor;
-	
 	n2o_amt = rand(truncated(Normal(n2o_mean, n2o_std), 0, n2o_mean * 3), n_samples);
 	n2o_co2eq_factor = rand(Uniform(n2o_co2_eq_lower, n2o_co2_eq_upper), n_samples);
 	n2o_co2eq = n2o_amt .* n2o_co2eq_factor;
@@ -52,7 +54,7 @@ begin
 	residue_amt_3 = rand(Uniform(residue_amt_3_lower, residue_amt_3_upper), n_samples);
 	residue_amt_2 = 23;
 	
-	total_co2 = co2_amt .* residue_amt / 1e3 # units of g/kg * million tonnes / 1000 = million g = Gg
+	total_co2 = co2_amt .* residue_amt / 1e3 # g/kg residue * million tonnes residue * 1kg/1000g = million tonnes
 	total_co2eq = co2eq .* residue_amt / 1e3
 	total_co2_2 = co2_amt .* residue_amt_2 / 1e3
 	total_co2eq_2 = co2eq .* residue_amt_2 / 1e3
@@ -71,9 +73,7 @@ begin
 end;
 
 # ╔═╡ e986fbd0-4d42-11eb-3342-ff3bb8eff1ad
-md"# What is the global warming impact of burning crop residue in Northern India?
-
-> Note, we are not experts in this field. So results to be interpreted with caution.
+md"# What is the global warming impact of crop stubble burning in Northern India?
 
 To clear the fields of the residue from the previous rice crop and make way for the subsequent wheat crop, some farmers in Northern India burn what's left in the field. Called crop residue burning or stubble burning, this happens in the months of October and November [1]. Manually clearing the residue, or using machines built for the purpose, may cost more [10].
 
@@ -118,7 +118,7 @@ begin
 end
 
 # ╔═╡ f4406d20-586b-11eb-0d35-51da6f73592e
-md"Since the Y axis is on the log scale, we observe that $CO_2$ emission is $\approx$2 orders of magnitude greater than $CH_4$ emission, which is an order greater than $N_2O$ emission. While these are simply the amounts, the impact on global warming is better reflected by the chart below."
+md"Since the X axis is on the log scale, we observe that $CO_2$ emission is $\approx$2 orders of magnitude greater than $CH_4$ emission, which is an order greater than $N_2O$ emission. While these are simply the amounts, the impact on global warming is better reflected by the chart below."
 
 # ╔═╡ 55efed92-7f84-11eb-0c2e-cd38094e461d
 begin
@@ -139,7 +139,7 @@ To put these numbers in perspective, we looked at the $CO_2$ output of growing r
 - In comparison, CO2 from burning residue is : $(round(mean(co2eq) / 1000, digits=2)) $$\pm$$ $(round(std(co2eq) / 1000, digits=2)) (mean $$\pm$$ SD) kg CO2eq for one kg of *residue* (from the plot above). 
 - Using a conversion factor of $(rcr_lower) - $(rcr_upper) kg residue per kg rice crop [1], we have to $(round(mean(co2eq_per_kg_rice) / 1000, digits=2)) $$\pm$$ $(round(std(co2eq_per_kg_rice) / 1000, digits=2)) kg CO2eq per kg of rice grown (mean $$\pm$$ SD), from stubble burning.
 
-It appears that growing rice with stubble burning creates 50% more CO2, approximately, than growing rice without stubble burning!
+It appears that growing rice with stubble burning creates $\approx$50% more CO2 ($(round(mean(co2eq_per_kg_rice) / 1000, digits=2)) kg compared to 4kg $$CO_2$$),than growing rice without stubble burning!
 
 ## Overall impact on global warming
 
@@ -158,22 +158,25 @@ Computing the impact of these residue amounts is simply multiplying one or more 
 # ╔═╡ 745cd7d0-846f-11eb-1cab-e1ec4e7d7fad
 begin
 	@df co2_df violin(:Case, :Amount, group = :Quantity, side=:left, 
-		label="CO2 only", xticks=[1, 2, 3], xlabel="Cases", ylabel="CO2eq (Gg or million kg)", title="Distribution of gCO2eq from crop residue burning")
+		label="CO2 only", xticks=[1, 2, 3], xlabel="Cases", ylabel="CO2eq (million tonnes)", title="Distribution of gCO2eq from crop residue burning")
 	@df total_df violin!(:Case, :Amount, group = :Quantity, side=:right, label="Total")
 end
 
-# ╔═╡ 7f753680-5878-11eb-3c3c-d772aa51e7e7
+# ╔═╡ c2cb8850-86c5-11eb-2c30-8168e9df6a5a
 md"We trust the estimate of of case number 1 most, since the authors of that publication follow a first principled approach to estimate the amount of residue, and use many data sources to avoid underestimations. For example, they fill in the gaps from satellite data with surveys.
 
 ### Putting these numbers in perspective
 
-According to Our World in Data [9], the total CO2 emission of India is 2.46 billion tonnes in 2017. The CO2eq from case number 1 as a fraction of this quantity evaluates to $(round(mean(total_co2eq) / (india_annual_emission) * 100, digits=2)) $$\pm$$  
-$(round(std(total_co2eq) / (india_annual_emission) * 100, digits=2)) % (mean $$\pm$$ SD) or almost 1%! This is a lower estimate than case 2, where we are looking at $(round(mean(total_co2eq_2) / (india_annual_emission) * 100, digits=2)) % $$\pm$$ $(round(std(total_co2eq_2) / (india_annual_emission) * 100, digits=2)) % (mean $$\pm$$ SD).
+According to Our World in Data [9], the total CO2 emission of India is $india_annual_emission_billion_tonnes billion tonnes in 2017. The CO2eq from case number 1 as a fraction of this quantity evaluates to $(round(mean(total_co2eq) / (india_annual_emission_million_tonnes) * 100, digits=2)) $$\pm$$  
+$(round(std(total_co2eq) / (india_annual_emission_million_tonnes) * 100, digits=2)) % (mean $$\pm$$ SD) or almost 1%! This is a lower estimate than case 2, where we are looking at $(round(mean(total_co2eq_2) / (india_annual_emission_million_tonnes) * 100, digits=2)) % $$\pm$$ $(round(std(total_co2eq_2) / (india_annual_emission_million_tonnes) * 100, digits=2)) % (mean $$\pm$$ SD).
 
 ## Summary of findings
 
-1. Compared to growing rice without stubble burning, growing rice with burning of crop residue releases 50% more CO2eq of GHG.
-1. Accounting for how much rice is grown with stubble burning, the GHG contribution was around 1% of the total GHG emissions of India in 2017.
+1. The bulk of GHG emissions from stubble burning is from the direct contribution of $CO_2$, with small contributions from nitrous oxide and methane.
+1. Compared to growing rice without stubble burning, growing rice with burning of crop residue releases $\approx$50% more CO2eq of GHG.
+1. Accounting for how much rice is grown with stubble burning, the GHG contribution of stubble burning was $\approx$ 1% of the total GHG emissions of India in 2017.
+
+> Note, we are not experts in this field. So results to be interpreted with caution.
 
 "
 
@@ -214,13 +217,13 @@ md"
 # ╠═e4abc46e-52e6-11eb-19e0-19a94e1257c6
 # ╠═5cce7220-846c-11eb-0a99-7bed14a9f937
 # ╟─e986fbd0-4d42-11eb-3342-ff3bb8eff1ad
-# ╟─8aa500ee-52e5-11eb-034e-15d346c9433e
+# ╠═8aa500ee-52e5-11eb-034e-15d346c9433e
 # ╟─d6b15000-7f83-11eb-1fca-478cddbecf54
 # ╟─f4406d20-586b-11eb-0d35-51da6f73592e
 # ╟─55efed92-7f84-11eb-0c2e-cd38094e461d
 # ╟─925ff0a0-586e-11eb-24c5-3be428cb076f
 # ╟─745cd7d0-846f-11eb-1cab-e1ec4e7d7fad
-# ╟─7f753680-5878-11eb-3c3c-d772aa51e7e7
+# ╟─c2cb8850-86c5-11eb-2c30-8168e9df6a5a
 # ╟─701820f0-52e5-11eb-1cff-195defc1e22a
 # ╟─8685b4b0-52e5-11eb-1414-bfb2439d473c
 # ╟─77ed9760-52e5-11eb-3534-d512d858bd9d
