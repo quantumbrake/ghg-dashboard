@@ -450,7 +450,7 @@ end
 
 # ╔═╡ e0ad3a7e-8447-11eb-2df2-3d52fffaab6b
 md"""
-We create function to calculate the daily emissions of a `Person`
+We create function to calculate the daily and yearly emissions of a `Person`
 """
 
 # ╔═╡ 2c63765e-68c3-11eb-317c-d1603846ca9c
@@ -522,7 +522,17 @@ Let us consider the case where a person following a meat rich diet considers swi
 
 # ╔═╡ 5114761e-84d0-11eb-094e-fde0d465d19e
 md"""
-We create a `Person` who eats a diet rich in meat and animal derived products (`person_meat`) and a `Person` who follows a vegan diet (`person_vegan`). The only differences between these two is in the food items and their consumption.
+We create a `Person` who eats a diet rich in meat and animal derived products (`person_meat`) and a `Person` who follows a vegan diet (`person_vegan`). The only differences between these two is in the food items they eat (consumption quantities are the same).
+
+Each `Person`:
+1. Owns a car and drives on an average of 50 km per day
+2. Watches ultraHDVideo for an average of 240 mins a day
+3. Lives in the USA and uses an average of 30 kWh of electrcity per day
+4. Buys jeans, shirts and shoes at the rate of 1 per 100 days
+
+Additionally:
+- The `person_meat` eats an average of 120g of pork, chicken, milk, eggs and rice everyday
+- The `person_vegan` eats an average of 120g of fruit, tofu, beans, vegetables and rice everyday
 """
 
 # ╔═╡ f9d0182e-8450-11eb-3f42-3df1cf54cf96
@@ -553,39 +563,68 @@ person_vegan = Person(
 	Poisson(0.001)
 )
 
-# ╔═╡ 751bb036-844e-11eb-035b-6d62fe25bfce
-emissions_vegan = yearly_emissions(person_vegan)
+# ╔═╡ 081ee4fc-84f4-11eb-3bad-a1e680d897b3
+md"""
+The daily emissions of `person_meat` for a year:
+"""
 
 # ╔═╡ 2af54294-8451-11eb-29b9-dd400f6ceb74
-emission_meat = yearly_emissions(person_meat)
+emissions_meat = yearly_emissions(person_meat)
+
+# ╔═╡ f0ecfbb6-84f3-11eb-0b02-27ffea69c7ca
+md"""
+The daily emissions of `person_vegan` for a year:
+"""
+
+# ╔═╡ 751bb036-844e-11eb-035b-6d62fe25bfce
+emissions_vegan = yearly_emissions(person_vegan)
 
 # ╔═╡ b185179e-8451-11eb-1877-593c6b4be750
 begin
 	emissions_vegan_long = stack(emissions_vegan, [:electricity, :food, :purchase, :streaming, :transport]);
-	emissions_meat_long = stack(emission_meat, [:electricity, :food, :purchase, :streaming, :transport]);
+	emissions_meat_long = stack(emissions_meat, [:electricity, :food, :purchase, :streaming, :transport]);
 end;
+
+# ╔═╡ 4d7c796a-84f4-11eb-19cf-dfd729ac8b98
+md"""
+A plot of the distributions of daily emissions of each `Person` in each category is show below. Only the distribution of emissions from food consumption are distinctly different (as per the desgin of the case study)
+"""
 
 # ╔═╡ 5b1d34d4-8451-11eb-15b5-1d45b1b3cb01
 begin
-	@df emissions_vegan_long violin(:variable, :value, side=:left, label="vegan diet", linewidth=0)
+	@df emissions_vegan_long violin(:variable, :value, side=:left, label="vegan diet", linewidth=0, title="Distribution of carbon emissions", ylabel="kgCO2eq")
 	@df emissions_meat_long violin!(:variable, :value, side=:right, label="meat diet", linewidth=0)
 end
 
+# ╔═╡ 2245ae6e-84f5-11eb-0bc9-61f05b3d6935
+md"""
+We then plot the only the distribution of daily emissions from food consumption of both `person_vegan` and `person_meat`.
+
+The means are roughly 1.6 kgCO2eq apart (with the meat diet having higher emissions) and we observe that the choice of foods allowed for the meat diet in this case study offer for a wider range of emissions compared to the vegan diet.
+"""
+
 # ╔═╡ b7a631d2-8454-11eb-3ff7-5b02d14ce2b9
 begin
-	@df emissions_vegan density(:food, fill=(0, .5, :green), label="vegan diet (food)")
-	@df emission_meat density!(:food, fill=(0, .5, :red), label="meat diet (food)")
+	@df emissions_vegan density(:food, fill=(0, .5, :green), label="vegan diet (food)", xlabel="kgCO2eq", title="Density plot of daily emissions due to food", legend=:right)
+	@df emissions_meat density!(:food, fill=(0, .5, :red), label="meat diet (food)")
 end
+
+# ╔═╡ e6423e30-84f6-11eb-0c07-cdae8e894eb0
+md"""
+Does this change shift in distribution of emission due to food consumption affect the overall carbon emissions in any significant way?
+
+To answer this question we plot the distribution of total emissions and observe that there is indeed a shift in the daily total emission from `person_meat` due to the 
+"""
 
 # ╔═╡ c760edd0-8452-11eb-318b-9de3fd9409ae
 begin
-	@df emissions_vegan density(:total, fill=(0, .5, :green), label="vegan diet (total)")
-	@df emission_meat density!(:total, fill=(0, .5, :red), label="meat diet (total)")
+	@df emissions_vegan density(:total, fill=(0, .5, :green), label="vegan diet (total)", xlabel="kgCO2eq", title="Density plot of the daily total emissions", legend=:right)
+	@df emissions_meat density!(:total, fill=(0, .5, :red), label="meat diet (total)")
 end
 
 # ╔═╡ 3ce10e94-8455-11eb-0083-3dea8a3ebc13
 md"""
-Total annual difference ...
+Total annual difference would amount to $(sum(emissions_meat[:total]) - sum(emissions_vegan[:total]))
 """
 
 # ╔═╡ dbccd432-7f7f-11eb-3d5d-894467220cba
@@ -646,12 +685,17 @@ md"""
 # ╟─5114761e-84d0-11eb-094e-fde0d465d19e
 # ╠═f9d0182e-8450-11eb-3f42-3df1cf54cf96
 # ╠═521ebdb6-68c5-11eb-3bb2-8926b33ec780
-# ╠═751bb036-844e-11eb-035b-6d62fe25bfce
-# ╠═2af54294-8451-11eb-29b9-dd400f6ceb74
-# ╠═b185179e-8451-11eb-1877-593c6b4be750
-# ╠═5b1d34d4-8451-11eb-15b5-1d45b1b3cb01
-# ╠═b7a631d2-8454-11eb-3ff7-5b02d14ce2b9
-# ╠═c760edd0-8452-11eb-318b-9de3fd9409ae
+# ╟─081ee4fc-84f4-11eb-3bad-a1e680d897b3
+# ╟─2af54294-8451-11eb-29b9-dd400f6ceb74
+# ╟─f0ecfbb6-84f3-11eb-0b02-27ffea69c7ca
+# ╟─751bb036-844e-11eb-035b-6d62fe25bfce
+# ╟─b185179e-8451-11eb-1877-593c6b4be750
+# ╟─4d7c796a-84f4-11eb-19cf-dfd729ac8b98
+# ╟─5b1d34d4-8451-11eb-15b5-1d45b1b3cb01
+# ╟─2245ae6e-84f5-11eb-0bc9-61f05b3d6935
+# ╟─b7a631d2-8454-11eb-3ff7-5b02d14ce2b9
+# ╟─e6423e30-84f6-11eb-0c07-cdae8e894eb0
+# ╟─c760edd0-8452-11eb-318b-9de3fd9409ae
 # ╠═3ce10e94-8455-11eb-0083-3dea8a3ebc13
 # ╠═dbccd432-7f7f-11eb-3d5d-894467220cba
 # ╠═203006e0-8448-11eb-3b43-ad4d0ba20e88
