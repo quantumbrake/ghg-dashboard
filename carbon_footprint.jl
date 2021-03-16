@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.12.21
+# v0.12.18
 
 using Markdown
 using InteractiveUtils
@@ -14,7 +14,7 @@ macro bind(def, element)
 end
 
 # ╔═╡ 3b2050da-52c1-11eb-3b89-1d5b6eb2cf40
-using PlutoUI, Printf, Plots, StatsPlots
+using PlutoUI, Printf, Plots, StatsPlots;
 
 # ╔═╡ 49f027da-5dce-11eb-3fff-0fd590112019
 using DataFrames, Distributions, Random
@@ -29,7 +29,7 @@ md"""
 >A carbon footprint is the total greenhouse gas (GHG) emissions caused by an individual, event, organization, service, or product, expressed as carbon dioxide equivalent.  
 >Source: Wikipedia.
 
-From an individual perspective, GHG emissions may arise due to various activities such as driving a car, consumption of food and other manufactured products and many more.
+From an individual perspective, GHG may be emitted from activities such as driving a car, consuming food or even just streaming content over the internet.
 
 In this dashboard we limit the sources of GHG emissions to:
 1. Electricity usage
@@ -95,7 +95,7 @@ md"""
 
 The emissions involved in producing 1 item of various foods
 
-Unit: $\frac{kgCO_2eq}{item}$
+Unit: $\frac{kgCO_2eq}{\textrm{item}}$
 
 **Sources**:
 - http://www.greeneatz.com/foods-carbon-footprint.html
@@ -103,7 +103,10 @@ Unit: $\frac{kgCO_2eq}{item}$
 """
 
 # ╔═╡ 329e738a-52ba-11eb-22dd-fbfe2de89bb1
-food_data = read_json("data/carbon_footprint/food.json")
+begin
+	food_data = read_json("data/carbon_footprint/food.json")
+	DataFrame(food_data)
+end
 
 # ╔═╡ e8574808-4d49-11eb-3515-2d66aadee9f2
 md"""
@@ -124,7 +127,7 @@ Unit: $\frac{kgCO_2eq}{minute}$
 streaming_data = Dict(["HDVideo" => "Video HD",
 			"fullHDVideo" => "Video - FullHD/1080p",
 			"ultraHDVideo" => "Video - UltraHD/4K",
-			"audioMP3" => "Audio - MP3"])
+			"audioMP3" => "Audio - MP3"]);
 
 # ╔═╡ fb596dc6-4d41-11eb-1dbd-6707e4fa7778
 md"""
@@ -145,7 +148,7 @@ end
 
 # ╔═╡ d4764dc0-7e81-11eb-29da-adbfa04c613b
 md"""
-We create a function to calculate the GHG emissions involved in transmitting `dataweight` (in bits) amount of data for a `duration` (in seconds) in a country with electricity emissions equal to `electricity_intensity` (in $kgCO_2eq.J^{-1}$)
+We create a function to calculate the GHG emissions involved in transmitting `dataweight` (in bits) amount of data for a `duration` (in seconds) in a country with emission intensity equal to `electricity_intensity` (in $kgCO_2eq.J^{-1}$). As suggested by the units of this quantity, emission intensity is simply the amount of $CO_2$ in kilograms per emitted per Joule of energy produced.
 """
 
 # ╔═╡ cfd60bf8-4d43-11eb-00b7-bd162061b954
@@ -168,7 +171,7 @@ end
 
 # ╔═╡ c25bfd94-7f7e-11eb-32ff-6fb869cd3b43
 md"""
-Next, we create a function to calculate carbon emissions created while streaming a particular type of content (`stream_type`) for `duration` (in seconds) in a country with electricity emissions equal to `electricity_intensity` (in $kgCO_2eq.J^{-1}$)
+Next, we create a function to calculate carbon emissions created while streaming a particular type of content (`stream_type`) for `duration` (in seconds) in a country with emission intensity equal to `electricity_intensity` (in $kgCO_2eq.J^{-1}$)
 """
 
 # ╔═╡ 5e3ae372-4d4a-11eb-3e76-e7b1545f3759
@@ -177,6 +180,8 @@ function streaming_carbonimpact(
 		duration::Float64,
 		electricity_intensity::Float64
 	)::Float64
+	# assuming movie duration = 2h 22m, and file size as given above.
+	# factor is a dictionary mapping kind of data to bits/s.
 	factor = Dict(
 		"HDVideo" => (1.21 * (10 ^ 9) * 8) / ((2 * 60 + 22) * 60),
 		"fullHDVideo" => (7.02* (10 ^ 9) * 8) / ((2 * 60 + 22) * 60),
@@ -215,7 +220,10 @@ Unit: $\frac{kgCO_2eq}{item}$
 """
 
 # ╔═╡ 42eb4b3e-52ba-11eb-2178-11e1d2a887af
-purchase_data = read_json("data/carbon_footprint/purchase.json")
+begin
+	purchase_data = read_json("data/carbon_footprint/purchase.json")
+	DataFrame(purchase_data)
+end
 
 # ╔═╡ cd98af32-4d4b-11eb-2ffb-edbe9a3c069b
 md"""
@@ -230,7 +238,10 @@ Unit: $\frac{kgCO_2eq}{m}$
 """
 
 # ╔═╡ 04b51758-52b7-11eb-10f9-f5be66cf0dec
-transport_data = read_json("data/carbon_footprint/transport.json")
+begin
+	transport_data = read_json("data/carbon_footprint/transport.json")
+	DataFrame(transport_data)
+end
 
 # ╔═╡ 66d55490-7f7c-11eb-2d2d-77f9b4f7b184
 md"""---"""
@@ -244,7 +255,9 @@ md"""
 plotly()
 
 # ╔═╡ 5fbcb6e6-52ca-11eb-3e8c-1bb7495dc15d
-md"""### Add your daily emissions here"""
+md"""### Check your emissions here
+
+You can use this section to compute the total emissions from various activities. Note that this is emissions from all these activities, and not normalized on a per day basis for instance."""
 
 # ╔═╡ 1b612ec2-52c1-11eb-22aa-3b406bd64623
 md"""
