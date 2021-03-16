@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.12.18
+# v0.12.21
 
 using Markdown
 using InteractiveUtils
@@ -87,6 +87,7 @@ begin
 	electricity_data_pw = read_json("data/carbon_footprint/electricity.json")
 	values_pj = map(x -> pw_to_pj(x), values(electricity_data_pw))
 	electricity_data = Dict(zip(keys(electricity_data_pw), values_pj))
+	DataFrame(electricity_data)
 end
 
 # ╔═╡ 1fc15990-4d41-11eb-0f5f-c309cf01fdfa
@@ -435,16 +436,16 @@ Random.seed!(1234);
 
 # ╔═╡ 18787dee-8446-11eb-2b9d-9967d7fe6d5c
 md"""
-A "Person" `struct` that stores information about a person's daily behavior:
+We create a "Person" `struct` that stores information about a lifestyle. This can be used to simulate the daily behavior of a person following this lifestyle and understand emissions due to:
 1. Vehicles owned and their usage distribution
-2. Food consumed and their consumption
+2. Food consumed and their amount
 3. Content streamed and their amount
 4. Country of residence
-5. Commonly purchased object and their purchase rate
+5. Commonly purchased products and their purchase rates
 
 >NOTE:
 >We assume that the distributions for each emission type are applicable to all objects or items of that type.
->Eg: If `foods` are "tofu" and "beans" and the provided `food_consumption` distribution is $\text{Truncated}(\mathcal{N}(150, 50), 0, 600)$, we assume that each food item follows that distribution.
+>Eg: If `foods` are "tofu" and "beans" and the provided `food_consumption` distribution is $\mathcal{N}(150, 50)$, we assume that each food item follows that distribution.
 """
 
 # ╔═╡ 49571046-68c2-11eb-071e-2709f8e40e48
@@ -463,7 +464,7 @@ end
 
 # ╔═╡ e0ad3a7e-8447-11eb-2df2-3d52fffaab6b
 md"""
-We create function to calculate the daily and yearly emissions of a `Person`
+We create functions to calculate the daily and yearly emissions of a `Person`:
 """
 
 # ╔═╡ 2c63765e-68c3-11eb-317c-d1603846ca9c
@@ -528,7 +529,7 @@ end
 
 # ╔═╡ 04badb38-8448-11eb-2750-fde9b58547e4
 md"""
-### Case Study 1: Switching from a meat rich diet to a vegan diet
+### Case Study: Switching from a meat rich diet to a vegan diet
 
 Let us consider the case where a person following a meat rich diet considers switching to a vegan diet and the impact it would have on their carbon footprint
 """
@@ -546,6 +547,8 @@ Each `Person`:
 Additionally:
 - The `person_meat` eats an average of 120g of pork, chicken, milk, eggs and rice everyday
 - The `person_vegan` eats an average of 120g of fruit, tofu, beans, vegetables and rice everyday
+
+>Note that it is possible to create more accurate and sophisticated distributions, but for the purposes of this case study we have decided to limit it to simple foods and distributions.
 """
 
 # ╔═╡ f9d0182e-8450-11eb-3f42-3df1cf54cf96
@@ -559,7 +562,7 @@ person_meat = Person(
 	"usa",
 	truncated(Normal(30, 5), 0, 200),  # 30 kwh is US average
 	["jeans", "shirt", "shoes"],
-	Poisson(0.001)
+	Poisson(0.01)
 )
 
 # ╔═╡ 521ebdb6-68c5-11eb-3bb2-8926b33ec780
@@ -573,7 +576,7 @@ person_vegan = Person(
 	"usa",
 	truncated(Normal(30, 5), 0, 200),  # 30 kwh is US average
 	["jeans", "shirt", "shoes"],
-	Poisson(0.001)
+	Poisson(0.01)
 )
 
 # ╔═╡ 081ee4fc-84f4-11eb-3bad-a1e680d897b3
@@ -600,7 +603,7 @@ end;
 
 # ╔═╡ 4d7c796a-84f4-11eb-19cf-dfd729ac8b98
 md"""
-A plot of the distributions of daily emissions of each `Person` in each category is show below. Only the distribution of emissions from food consumption are distinctly different (as per the desgin of the case study)
+A plot of the distributions of daily emissions of each `Person` in each category is shown below. Only the distribution of emissions from food consumption are distinctly different (as per the design of the case study)
 """
 
 # ╔═╡ 5b1d34d4-8451-11eb-15b5-1d45b1b3cb01
@@ -611,44 +614,33 @@ end
 
 # ╔═╡ 2245ae6e-84f5-11eb-0bc9-61f05b3d6935
 md"""
-We then plot the only the distribution of daily emissions from food consumption of both `person_vegan` and `person_meat`.
+We then plot only the distribution of daily emissions from food consumption of both `person_vegan` and `person_meat`.
 
-The means are roughly 1.6 kgCO2eq apart (with the meat diet having higher emissions) and we observe that the choice of foods allowed for the meat diet in this case study offer for a wider range of emissions compared to the vegan diet.
+The means are $\approx$ $(@sprintf("%.3f", mean(emissions_meat[!, :food]) - mean(emissions_vegan[!, :food]))) kgCO2eq apart (with the meat diet having higher emissions) and we observe that the choice of foods allowed for the meat diet in this case study offer for a wider range of emissions compared to the vegan diet.
 """
 
 # ╔═╡ b7a631d2-8454-11eb-3ff7-5b02d14ce2b9
 begin
-	@df emissions_vegan density(:food, fill=(0, .5, :green), label="vegan diet (food)", xlabel="kgCO2eq", title="Density plot of daily emissions due to food", legend=:right)
+	@df emissions_vegan density(:food, fill=(0, .5, :green), label="vegan diet (food)", xlabel="kgCO2eq", ylabel="Density", title="Density plot of daily emissions due to food", legend=:right)
 	@df emissions_meat density!(:food, fill=(0, .5, :red), label="meat diet (food)")
 end
 
 # ╔═╡ e6423e30-84f6-11eb-0c07-cdae8e894eb0
 md"""
-Does this change shift in distribution of emission due to food consumption affect the overall carbon emissions in any significant way?
+Does this shift in the distribution of emissions due to food consumption affect the overall carbon emissions in any significant way?
 
-To answer this question we plot the distribution of total emissions and observe that there is indeed a shift in the daily total emission from `person_meat` due to the 
+To answer this question we plot the distribution of total emissions (shown below) and observe that there is indeed a shift in the daily total emission by $\approx$ $(@sprintf("%.3f", mean(emissions_meat[!, :total]) - mean(emissions_vegan[!, :total]))) kgCO2eq, which means that the vegan diet has reduced daily emissions by $(@sprintf("%.2f", (1 - (mean(emissions_vegan[!, :total]) / mean(emissions_meat[!, :total]))) * 100 ))%
 """
 
 # ╔═╡ c760edd0-8452-11eb-318b-9de3fd9409ae
 begin
-	@df emissions_vegan density(:total, fill=(0, .5, :green), label="vegan diet (total)", xlabel="kgCO2eq", title="Density plot of the daily total emissions", legend=:right)
+	@df emissions_vegan density(:total, fill=(0, .5, :green), label="vegan diet (total)", xlabel="kgCO2eq", ylabel="Density", title="Density plot of the daily total emissions", legend=:right)
 	@df emissions_meat density!(:total, fill=(0, .5, :red), label="meat diet (total)")
 end
 
 # ╔═╡ 3ce10e94-8455-11eb-0083-3dea8a3ebc13
 md"""
-Total annual difference would amount to $(sum(emissions_meat[:total]) - sum(emissions_vegan[:total]))
-"""
-
-# ╔═╡ dbccd432-7f7f-11eb-3d5d-894467220cba
-md"""
-Grouped bar plot
-Stacked group bar plot
-"""
-
-# ╔═╡ 203006e0-8448-11eb-3b43-ad4d0ba20e88
-md"""
-### Case Study 2: Fossil fueled car vs. Electric car vs. Public transport
+Total **annual** difference in emissions would amount to $\approx$ $(@sprintf("%.2f", sum(emissions_meat[!, :total]) - sum(emissions_vegan[!, :total]))) kgCO2eq. Implying that the switching to a vegan diet would allow one to reduce their carbon footprint by a considerable amount.
 """
 
 # ╔═╡ Cell order:
@@ -709,6 +701,4 @@ md"""
 # ╟─b7a631d2-8454-11eb-3ff7-5b02d14ce2b9
 # ╟─e6423e30-84f6-11eb-0c07-cdae8e894eb0
 # ╟─c760edd0-8452-11eb-318b-9de3fd9409ae
-# ╠═3ce10e94-8455-11eb-0083-3dea8a3ebc13
-# ╠═dbccd432-7f7f-11eb-3d5d-894467220cba
-# ╠═203006e0-8448-11eb-3b43-ad4d0ba20e88
+# ╟─3ce10e94-8455-11eb-0083-3dea8a3ebc13
